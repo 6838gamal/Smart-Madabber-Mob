@@ -1,0 +1,695 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../widgets/decision_card.dart';
+import '../widgets/resource_card.dart';
+import '../widgets/insight_card.dart';
+import '../widgets/stat_card.dart';
+import '../widgets/empty_state.dart';
+import '../theme/app_theme.dart';
+import '../models/resource.dart';
+import '../models/rule.dart';
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final border = isDark ? AppColors.borderDark : AppColors.borderLight;
+
+    return Column(
+      children: [
+        _buildHeader(context, isDark, border),
+        Container(
+          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          child: TabBar(
+            controller: _tabs,
+            labelColor: AppColors.primary,
+            unselectedLabelColor: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+            indicatorColor: AppColors.primary,
+            indicatorWeight: 2,
+            labelStyle:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontSize: 13),
+            tabs: const [
+              Tab(text: 'Today'),
+              Tab(text: 'Trends'),
+              Tab(text: 'Stock'),
+              Tab(text: 'Intelligence'),
+            ],
+          ),
+        ),
+        Divider(height: 1, color: border),
+        Expanded(
+          child: TabBarView(
+            controller: _tabs,
+            children: const [
+              _TodayTab(),
+              _TrendsTab(),
+              _StockTab(),
+              _IntelligenceTab(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, bool isDark, Color border) {
+    final provider = context.watch<AppProvider>();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Dashboard',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              Text(
+                'Your intelligent overview',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+            ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () => provider.refreshInsights(),
+            tooltip: 'Refresh Insights',
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodayTab extends StatelessWidget {
+  const _TodayTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DecisionCard(
+            insight: provider.decisionOfTheDay,
+            onDismiss: provider.decisionOfTheDay != null
+                ? () => provider.resolveInsight(
+                    provider.decisionOfTheDay!.id)
+                : null,
+          ),
+          const SizedBox(height: 24),
+          _SectionTitle(title: 'Quick Stats'),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.6,
+            children: [
+              StatCard(
+                title: 'Total Resources',
+                value: provider.resources.length.toString(),
+                icon: Icons.inventory_2_rounded,
+                color: AppColors.primary,
+                onTap: () => provider.navigateTo(AppScreen.resources),
+              ),
+              StatCard(
+                title: 'Active Alerts',
+                value: provider.activeInsights.length.toString(),
+                subtitle: 'Need attention',
+                icon: Icons.notifications_active_rounded,
+                color: AppColors.warning,
+                onTap: () => provider.navigateTo(AppScreen.insights),
+              ),
+              StatCard(
+                title: 'Critical',
+                value: provider.criticalCount.toString(),
+                subtitle: 'Immediate action',
+                icon: Icons.warning_rounded,
+                color: AppColors.critical,
+              ),
+              StatCard(
+                title: 'Low Stock',
+                value: provider.lowStockCount.toString(),
+                subtitle: 'Restock soon',
+                icon: Icons.trending_down_rounded,
+                color: AppColors.warning,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          if (provider.activeInsights.isNotEmpty) ...[
+            _SectionTitle(
+              title: 'Active Alerts',
+              trailing: TextButton(
+                onPressed: () => provider.navigateTo(AppScreen.insights),
+                child: const Text('See all'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...provider.activeInsights.take(3).map((i) => InsightCard(
+                  insight: i,
+                  compact: true,
+                )),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TrendsTab extends StatelessWidget {
+  const _TrendsTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final recent7 = provider.recentTransactions(days: 7);
+    final recent30 = provider.recentTransactions(days: 30);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  title: 'Spent (30d)',
+                  value:
+                      '${provider.currency} ${provider.totalSpent(days: 30).toStringAsFixed(0)}',
+                  icon: Icons.shopping_cart_rounded,
+                  color: AppColors.danger,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatCard(
+                  title: 'Revenue (30d)',
+                  value:
+                      '${provider.currency} ${provider.totalRevenue(days: 30).toStringAsFixed(0)}',
+                  icon: Icons.attach_money_rounded,
+                  color: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  title: 'Transactions (7d)',
+                  value: recent7.length.toString(),
+                  icon: Icons.swap_horiz_rounded,
+                  color: AppColors.info,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatCard(
+                  title: 'Transactions (30d)',
+                  value: recent30.length.toString(),
+                  icon: Icons.history_rounded,
+                  color: AppColors.secondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _SectionTitle(title: 'Recent Activity'),
+          const SizedBox(height: 12),
+          if (recent7.isEmpty)
+            const EmptyState(
+              emoji: '📊',
+              title: 'No recent transactions',
+              subtitle:
+                  'Add transactions to see weekly trends here.',
+            )
+          else
+            ...recent7.take(10).map((txn) {
+              final resource = provider.resources
+                  .where((r) => r.id == txn.resourceId)
+                  .firstOrNull;
+              final resourceName =
+                  resource?.name ?? 'Unknown Resource';
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.surfaceDark
+                      : AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight),
+                ),
+                child: Row(
+                  children: [
+                    Text(txn.type.emoji,
+                        style: const TextStyle(fontSize: 20)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            resourceName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight,
+                            ),
+                          ),
+                          Text(
+                            '${txn.type.label} • ${txn.quantity} units',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (txn.price > 0)
+                      Text(
+                        '${provider.currency} ${txn.price.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: txn.type.name == 'sale'
+                              ? AppColors.success
+                              : AppColors.danger,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockTab extends StatelessWidget {
+  const _StockTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final resources = provider.resources;
+    final critical = resources
+        .where((r) => r.status == ResourceStatus.critical)
+        .toList();
+    final low =
+        resources.where((r) => r.status == ResourceStatus.low).toList();
+    final normal = resources
+        .where((r) => r.status == ResourceStatus.normal)
+        .toList();
+    final inactive = resources
+        .where((r) => r.status == ResourceStatus.inactive)
+        .toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (critical.isNotEmpty) ...[
+            _SectionTitle(
+                title: '🚨 Critical (${critical.length})'),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: critical.length,
+              itemBuilder: (_, i) => ResourceCard(
+                resource: critical[i],
+                onTap: () =>
+                    provider.navigateTo(AppScreen.resources),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+          if (low.isNotEmpty) ...[
+            _SectionTitle(
+                title: '⚠️ Low Stock (${low.length})'),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: low.length,
+              itemBuilder: (_, i) =>
+                  ResourceCard(resource: low[i]),
+            ),
+            const SizedBox(height: 20),
+          ],
+          if (inactive.isNotEmpty) ...[
+            _SectionTitle(
+                title: '😴 Inactive (${inactive.length})'),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: inactive.length,
+              itemBuilder: (_, i) =>
+                  ResourceCard(resource: inactive[i]),
+            ),
+            const SizedBox(height: 20),
+          ],
+          if (normal.isNotEmpty) ...[
+            _SectionTitle(
+                title: '✅ Normal (${normal.length})'),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: normal.length,
+              itemBuilder: (_, i) =>
+                  ResourceCard(resource: normal[i]),
+            ),
+          ],
+          if (resources.isEmpty)
+            const EmptyState(
+              emoji: '📦',
+              title: 'No resources yet',
+              subtitle: 'Add resources to track their status.',
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IntelligenceTab extends StatelessWidget {
+  const _IntelligenceTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.info.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: AppColors.info.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.psychology_rounded,
+                    color: AppColors.info, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'The rules engine continuously monitors your resources and automatically generates actionable decisions.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SectionTitle(
+              title: 'Active Rules (${provider.rules.where((r) => r.enabled).length})'),
+          const SizedBox(height: 12),
+          ...provider.rules.map((rule) => Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.surfaceDark
+                      : AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      rule.enabled
+                          ? Icons.check_circle_rounded
+                          : Icons.circle_outlined,
+                      color: rule.enabled
+                          ? AppColors.success
+                          : isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            rule.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            rule.conditionType.description,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _SeverityPill(
+                        severity: rule.severity),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: rule.enabled,
+                      onChanged: (_) =>
+                          provider.toggleRule(rule.id),
+                      activeColor: AppColors.primary,
+                      materialTapTargetSize:
+                          MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(height: 24),
+          _SectionTitle(title: 'Engine Summary'),
+          const SizedBox(height: 12),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2,
+            children: [
+              StatCard(
+                title: 'Insights Generated',
+                value: provider.insights.length.toString(),
+                icon: Icons.auto_awesome_rounded,
+                color: AppColors.info,
+              ),
+              StatCard(
+                title: 'Active',
+                value: provider.activeInsights.length.toString(),
+                icon: Icons.notifications_active_rounded,
+                color: AppColors.warning,
+              ),
+              StatCard(
+                title: 'Rules Active',
+                value: provider.rules
+                    .where((r) => r.enabled)
+                    .length
+                    .toString(),
+                icon: Icons.rule_rounded,
+                color: AppColors.success,
+              ),
+              StatCard(
+                title: 'Total Rules',
+                value: provider.rules.length.toString(),
+                icon: Icons.settings_rounded,
+                color: AppColors.secondary,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final Widget? trailing;
+  const _SectionTitle({required this.title, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: isDark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
+          ),
+        ),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+class _SeverityPill extends StatelessWidget {
+  final RuleSeverity severity;
+  const _SeverityPill({required this.severity});
+
+  Color get _color {
+    switch (severity) {
+      case RuleSeverity.critical:
+        return AppColors.critical;
+      case RuleSeverity.high:
+        return AppColors.danger;
+      case RuleSeverity.medium:
+        return AppColors.warning;
+      case RuleSeverity.low:
+        return AppColors.normal;
+      case RuleSeverity.info:
+        return AppColors.info;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        severity.label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: _color,
+        ),
+      ),
+    );
+  }
+}

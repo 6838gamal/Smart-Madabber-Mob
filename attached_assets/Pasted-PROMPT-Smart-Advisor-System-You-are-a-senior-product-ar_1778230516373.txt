@@ -1,0 +1,149 @@
+PROMPT: Smart Advisor System (المدبّر الذكي)
+
+You are a senior product architect and system designer. Your task is to design a complete offline-first intelligent decision-making application called “Smart Advisor / المدبّر الذكي”.
+
+The system is not a traditional management app. It is a decision engine that helps users manage resources and take daily actions. It adapts automatically to two usage modes: household management and small business management, without forcing the user to choose.
+
+Core principle: “Do not just display data — tell the user what to do.”
+
+SYSTEM ARCHITECTURE
+
+The system consists of 3 layers:
+
+1. Data Layer (Local SQLite Database)
+2. Logic Layer (Rules Engine)
+3. Presentation Layer (UI)
+
+DATABASE SCHEMA (LOCAL SQLITE)
+
+Resources:
+id INTEGER PRIMARY KEY
+name TEXT
+type TEXT
+current_quantity REAL
+min_threshold REAL
+unit TEXT
+daily_consumption_rate REAL
+created_at TEXT
+
+Transactions:
+id INTEGER PRIMARY KEY
+resource_id INTEGER
+type TEXT
+quantity REAL
+price REAL
+date TEXT
+note TEXT
+
+Rules:
+id INTEGER PRIMARY KEY
+name TEXT
+condition_type TEXT
+condition_value REAL
+action TEXT
+severity TEXT
+enabled INTEGER
+
+Insights:
+id INTEGER PRIMARY KEY
+resource_id INTEGER
+type TEXT
+message TEXT
+priority INTEGER
+created_at TEXT
+status TEXT
+
+Snapshots (optional):
+id INTEGER PRIMARY KEY
+date TEXT
+total_resources INTEGER
+low_stock_count INTEGER
+high_consumption_count INTEGER
+waste_score REAL
+
+System Meta:
+key TEXT PRIMARY KEY
+value TEXT
+
+RULES ENGINE LOGIC
+
+IF current_quantity < min_threshold
+→ generate insight: low stock warning
+
+IF daily_consumption_rate increases significantly
+→ generate insight: possible waste
+
+IF no activity for a resource over time
+→ generate insight: unused resource review
+
+The system generates decisions automatically.
+
+UI STRUCTURE
+
+Sidebar:
+Dashboard
+Resources
+Transactions
+Insights
+Reports
+Settings
+
+Dashboard:
+Decision of the Day
+Resource Status Cards
+Alerts Section
+Quick Analytics
+
+Tabs:
+
+1. Today (decisions + alerts)
+2. Trends (weekly/monthly patterns)
+3. Stock (all resources + filters)
+4. Intelligence (rules explanation)
+
+Resource Detail:
+Quantity
+Consumption rate
+Status
+Related decisions
+
+Insight Detail:
+Decision
+Reason
+Data source
+Severity
+
+FILTERS
+
+Time range (day/week/month/custom)
+Type (purchase/consume/sale)
+Status (low/normal/critical)
+
+Smart filters:
+low stock
+high consumption
+waste detection
+inactive resources
+
+SYSTEM BEHAVIOR
+
+On app startup:
+
+1. Load local data
+2. Apply rules engine
+3. Generate insights
+4. Show “Decision of the Day”
+
+PRODUCT PRINCIPLE
+
+This is NOT a dashboard.
+This is NOT accounting software.
+This is a decision-making assistant system.
+
+GOAL
+
+Build a production-ready blueprint for an offline-first intelligent system that helps users:
+reduce waste
+optimize resources
+make daily decisions
+manage home or small business efficiently
