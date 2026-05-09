@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/resource.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class ResourceCard extends StatelessWidget {
@@ -40,6 +41,7 @@ class ResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pct = resource.stockPercentage;
 
@@ -119,7 +121,7 @@ class ResourceCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'min: ${resource.minThreshold} ${resource.unit}',
+                  '${l10n.minPrefix}${resource.minThreshold} ${resource.unit}',
                   style: TextStyle(
                     fontSize: 11,
                     color: isDark
@@ -144,8 +146,8 @@ class ResourceCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 resource.daysRemaining.isFinite
-                    ? '~${resource.daysRemaining.toStringAsFixed(0)} days remaining'
-                    : 'Consumption rate not set',
+                    ? '~${resource.daysRemaining.toStringAsFixed(0)} ${l10n.daysRemaining}'
+                    : l10n.consumptionRateNotSet,
                 style: TextStyle(
                   fontSize: 11,
                   color: isDark

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/insight.dart';
 import '../models/rule.dart';
+import '../l10n/app_localizations.dart';
+import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
 
 class DecisionCard extends StatelessWidget {
@@ -16,7 +19,7 @@ class DecisionCard extends StatelessWidget {
   }
 
   Widget _buildAllGood(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = L10n.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -46,9 +49,9 @@ class DecisionCard extends StatelessWidget {
                     color: Colors.white, size: 18),
               ),
               const SizedBox(width: 8),
-              const Text(
-                "Decision of the Day",
-                style: TextStyle(
+              Text(
+                l10n.decisionOfTheDay,
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -58,18 +61,18 @@ class DecisionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            '✅ All systems normal',
-            style: TextStyle(
+          Text(
+            l10n.allSystemsNormal,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'No critical issues detected. Keep monitoring your resources.',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+          Text(
+            l10n.noIssuesDetected,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
           ),
         ],
       ),
@@ -77,6 +80,7 @@ class DecisionCard extends StatelessWidget {
   }
 
   Widget _buildDecision(BuildContext context, Insight insight) {
+    final l10n = L10n.of(context);
     final Color gradStart = _gradientStart(insight.severity);
     final Color gradEnd = _gradientEnd(insight.severity);
 
@@ -116,9 +120,9 @@ class DecisionCard extends StatelessWidget {
                         color: Colors.white, size: 18),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    "Decision of the Day",
-                    style: TextStyle(
+                  Text(
+                    l10n.decisionOfTheDay,
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -176,9 +180,9 @@ class DecisionCard extends StatelessWidget {
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Mark Resolved',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.markResolved,
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600),

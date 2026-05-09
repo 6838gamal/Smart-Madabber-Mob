@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../models/transaction.dart';
 import '../models/resource.dart';
 import '../theme/app_theme.dart';
@@ -22,6 +23,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cutoff = DateTime.now().subtract(Duration(days: _days));
@@ -34,31 +36,29 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     return Column(
       children: [
-        _buildHeader(context, isDark, provider, txns.length),
+        _buildHeader(context, isDark, provider, l10n, txns.length),
         Expanded(
           child: txns.isEmpty
               ? EmptyState(
                   emoji: '📋',
-                  title: 'No transactions',
-                  subtitle: 'Log your first transaction above.',
-                  actionLabel: 'Add Transaction',
+                  title: l10n.noTransactions,
+                  subtitle: l10n.logFirstTransaction,
+                  actionLabel: l10n.addTransaction,
                   onAction: () => _showAdd(context),
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(20),
                   itemCount: txns.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: 8),
-                  itemBuilder: (_, i) =>
-                      _TxnRow(txn: txns[i]),
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) => _TxnRow(txn: txns[i]),
                 ),
         ),
       ],
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark,
-      AppProvider provider, int count) {
+  Widget _buildHeader(BuildContext context, bool isDark, AppProvider provider,
+      L10n l10n, int count) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -71,14 +71,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Transactions',
+                  Text(l10n.transactions,
                       style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: isDark
                               ? AppColors.textPrimaryDark
                               : AppColors.textPrimaryLight)),
-                  Text('$count entries',
+                  Text('$count ${l10n.transactions.toLowerCase()}',
                       style: TextStyle(
                           fontSize: 12,
                           color: isDark
@@ -89,7 +89,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ElevatedButton.icon(
                 onPressed: () => _showAdd(context),
                 icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add'),
+                label: Text(l10n.addTransaction),
               ),
             ],
           ),
@@ -99,32 +99,36 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: Row(
               children: [
                 _Chip(
-                    label: 'All',
+                    label: l10n.allTypes,
                     selected: _filterType == null,
-                    onTap: () =>
-                        setState(() => _filterType = null)),
+                    onTap: () => setState(() => _filterType = null)),
                 const SizedBox(width: 6),
                 ...TransactionType.values.map((t) => Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: _Chip(
                           label: '${t.emoji} ${t.label}',
                           selected: _filterType == t,
-                          onTap: () => setState(
-                              () => _filterType = t)),
+                          onTap: () =>
+                              setState(() => _filterType = t)),
                     )),
                 const SizedBox(width: 6),
                 _Chip(
-                    label: '7 days',
+                    label: l10n.last7Days,
                     selected: _days == 7,
                     onTap: () => setState(() => _days = 7)),
                 const SizedBox(width: 6),
                 _Chip(
-                    label: '30 days',
+                    label: l10n.last30Days,
                     selected: _days == 30,
                     onTap: () => setState(() => _days = 30)),
                 const SizedBox(width: 6),
                 _Chip(
-                    label: 'All time',
+                    label: l10n.last90Days,
+                    selected: _days == 90,
+                    onTap: () => setState(() => _days = 90)),
+                const SizedBox(width: 6),
+                _Chip(
+                    label: l10n.all,
                     selected: _days == 3650,
                     onTap: () => setState(() => _days = 3650)),
               ],
@@ -148,11 +152,11 @@ class _TxnRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.read<AppProvider>();
-    final resource = provider.resources
-        .where((r) => r.id == txn.resourceId)
-        .firstOrNull;
+    final resource =
+        provider.resources.where((r) => r.id == txn.resourceId).firstOrNull;
 
     final Color typeColor;
     switch (txn.type) {
@@ -171,15 +175,12 @@ class _TxnRow extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: isDark
-                ? AppColors.borderDark
-                : AppColors.borderLight),
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
       child: Row(
         children: [
@@ -201,7 +202,7 @@ class _TxnRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  resource?.name ?? 'Unknown Resource',
+                  resource?.name ?? '—',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -229,7 +230,7 @@ class _TxnRow extends StatelessWidget {
             children: [
               if (txn.price > 0)
                 Text(
-                  '${txn.type == TransactionType.sale ? '+' : '-'}${provider.currency} ${txn.price.toStringAsFixed(2)}',
+                  '${txn.type == TransactionType.sale ? '+' : '-'}${provider.formatAmount(txn.price)}',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -257,7 +258,7 @@ class _TxnRow extends StatelessWidget {
                     ? AppColors.textSecondaryDark
                     : AppColors.textSecondaryLight),
             onPressed: () => provider.deleteTransaction(txn.id),
-            tooltip: 'Delete',
+            tooltip: l10n.delete,
           ),
         ],
       ),
@@ -270,9 +271,7 @@ class _Chip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   const _Chip(
-      {required this.label,
-      required this.selected,
-      required this.onTap});
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -280,8 +279,7 @@ class _Chip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withOpacity(0.12)
@@ -301,8 +299,7 @@ class _Chip extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight:
-                selected ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             color: selected
                 ? AppColors.primary
                 : isDark
@@ -323,8 +320,7 @@ class _AddTransactionDialog extends StatefulWidget {
       _AddTransactionDialogState();
 }
 
-class _AddTransactionDialogState
-    extends State<_AddTransactionDialog> {
+class _AddTransactionDialogState extends State<_AddTransactionDialog> {
   final _qtyCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
@@ -342,8 +338,9 @@ class _AddTransactionDialogState
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final l10n = L10n.of(context);
     return AlertDialog(
-      title: const Text('Add Transaction'),
+      title: Text(l10n.addTransaction),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -352,20 +349,18 @@ class _AddTransactionDialogState
           children: [
             DropdownButtonFormField<String>(
               value: _selectedResourceId,
-              decoration:
-                  const InputDecoration(labelText: 'Resource *'),
+              decoration: InputDecoration(labelText: '${l10n.resources} *'),
               items: provider.resources
-                  .map((r) => DropdownMenuItem(
-                      value: r.id, child: Text(r.name)))
+                  .map((r) =>
+                      DropdownMenuItem(value: r.id, child: Text(r.name)))
                   .toList(),
-              onChanged: (v) =>
-                  setState(() => _selectedResourceId = v),
+              onChanged: (v) => setState(() => _selectedResourceId = v),
             ),
             const SizedBox(height: 12),
             SegmentedButton<TransactionType>(
               segments: TransactionType.values
-                  .map((t) => ButtonSegment(
-                      value: t, label: Text(t.label)))
+                  .map((t) =>
+                      ButtonSegment(value: t, label: Text(t.label)))
                   .toList(),
               selected: {_type},
               onSelectionChanged: (v) =>
@@ -377,8 +372,8 @@ class _AddTransactionDialogState
                 Expanded(
                   child: TextField(
                     controller: _qtyCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Quantity *'),
+                    decoration: InputDecoration(
+                        labelText: '${l10n.quantityLabel} *'),
                     keyboardType: TextInputType.number,
                   ),
                 ),
@@ -387,7 +382,7 @@ class _AddTransactionDialogState
                   child: TextField(
                     controller: _priceCtrl,
                     decoration:
-                        const InputDecoration(labelText: 'Price'),
+                        InputDecoration(labelText: l10n.priceLabel),
                     keyboardType: TextInputType.number,
                   ),
                 ),
@@ -396,8 +391,7 @@ class _AddTransactionDialogState
             const SizedBox(height: 12),
             TextField(
               controller: _noteCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'Note'),
+              decoration: InputDecoration(labelText: l10n.notesLabel),
             ),
           ],
         ),
@@ -405,8 +399,9 @@ class _AddTransactionDialogState
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
-        ElevatedButton(onPressed: _save, child: const Text('Add')),
+            child: Text(l10n.cancel)),
+        ElevatedButton(
+            onPressed: _save, child: Text(l10n.addTransaction)),
       ],
     );
   }

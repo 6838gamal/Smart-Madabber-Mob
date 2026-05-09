@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../models/insight.dart';
 import '../models/rule.dart';
 import '../widgets/insight_card.dart';
@@ -32,8 +33,17 @@ class _InsightsScreenState extends State<InsightsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.watch<AppProvider>();
+    final activeCount =
+        provider.insights.where((i) => i.isActive).length;
+    final resolvedCount = provider.insights
+        .where((i) => i.status == InsightStatus.resolved)
+        .length;
+    final dismissedCount = provider.insights
+        .where((i) => i.status == InsightStatus.dismissed)
+        .length;
 
     return Column(
       children: [
@@ -47,7 +57,7 @@ class _InsightsScreenState extends State<InsightsScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Insights',
+                    l10n.insights,
                     style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -57,9 +67,8 @@ class _InsightsScreenState extends State<InsightsScreen>
                   ),
                   ElevatedButton.icon(
                     onPressed: () => provider.refreshInsights(),
-                    icon: const Icon(Icons.refresh_rounded,
-                        size: 16),
-                    label: const Text('Refresh'),
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: Text(l10n.refresh),
                   ),
                 ],
               ),
@@ -74,15 +83,9 @@ class _InsightsScreenState extends State<InsightsScreen>
                 labelStyle: const TextStyle(
                     fontSize: 13, fontWeight: FontWeight.w600),
                 tabs: [
-                  Tab(
-                      text:
-                          'Active (${provider.insights.where((i) => i.isActive).length})'),
-                  Tab(
-                      text:
-                          'Resolved (${provider.insights.where((i) => i.status == InsightStatus.resolved).length})'),
-                  Tab(
-                      text:
-                          'Dismissed (${provider.insights.where((i) => i.status == InsightStatus.dismissed).length})'),
+                  Tab(text: '${l10n.active} ($activeCount)'),
+                  Tab(text: '${l10n.resolved} ($resolvedCount)'),
+                  Tab(text: '${l10n.dismissed} ($dismissedCount)'),
                 ],
               ),
             ],
@@ -90,9 +93,7 @@ class _InsightsScreenState extends State<InsightsScreen>
         ),
         Divider(
             height: 1,
-            color: isDark
-                ? AppColors.borderDark
-                : AppColors.borderLight),
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
         Expanded(
           child: TabBarView(
             controller: _tabs,
@@ -101,38 +102,32 @@ class _InsightsScreenState extends State<InsightsScreen>
                 insights: provider.insights
                     .where((i) => i.isActive)
                     .toList(),
-                onDismiss: (id) =>
-                    provider.dismissInsight(id),
-                onResolve: (id) =>
-                    provider.resolveInsight(id),
-                empty: const EmptyState(
+                onDismiss: (id) => provider.dismissInsight(id),
+                onResolve: (id) => provider.resolveInsight(id),
+                empty: EmptyState(
                   emoji: '🎉',
-                  title: 'No active insights',
-                  subtitle:
-                      'All systems are running smoothly. The engine found no issues.',
+                  title: l10n.noActiveInsights,
+                  subtitle: l10n.rulesWillGenerate,
                 ),
               ),
               _InsightList(
                 insights: provider.insights
-                    .where((i) =>
-                        i.status == InsightStatus.resolved)
+                    .where((i) => i.status == InsightStatus.resolved)
                     .toList(),
-                empty: const EmptyState(
+                empty: EmptyState(
                   emoji: '✅',
-                  title: 'No resolved insights',
-                  subtitle: 'Resolved insights will appear here.',
+                  title: l10n.noResolvedInsights,
+                  subtitle: l10n.rulesWillGenerate,
                 ),
               ),
               _InsightList(
                 insights: provider.insights
-                    .where((i) =>
-                        i.status == InsightStatus.dismissed)
+                    .where((i) => i.status == InsightStatus.dismissed)
                     .toList(),
-                empty: const EmptyState(
+                empty: EmptyState(
                   emoji: '🗑️',
-                  title: 'No dismissed insights',
-                  subtitle:
-                      'Dismissed insights will appear here.',
+                  title: l10n.noDismissedInsights,
+                  subtitle: l10n.rulesWillGenerate,
                 ),
               ),
             ],

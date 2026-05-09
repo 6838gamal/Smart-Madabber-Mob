@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../models/transaction.dart';
 import '../models/resource.dart';
 import '../theme/app_theme.dart';
@@ -19,6 +20,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.watch<AppProvider>();
 
@@ -27,23 +29,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPageHeader(isDark, provider),
+          _buildPageHeader(isDark, provider, l10n),
           const SizedBox(height: 20),
-          _buildPeriodSelector(isDark),
+          _buildPeriodSelector(isDark, l10n),
           const SizedBox(height: 20),
-          _buildSummaryCards(provider),
+          _buildSummaryCards(provider, l10n),
           const SizedBox(height: 24),
-          _buildResourceStatusChart(isDark, provider),
+          _buildResourceStatusChart(isDark, provider, l10n),
           const SizedBox(height: 24),
-          _buildTransactionTypeChart(isDark, provider),
+          _buildTransactionTypeChart(isDark, provider, l10n),
           const SizedBox(height: 24),
-          _buildTopResourcesTable(isDark, provider),
+          _buildTopResourcesTable(isDark, provider, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildPageHeader(bool isDark, AppProvider provider) {
+  Widget _buildPageHeader(bool isDark, AppProvider provider, L10n l10n) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -51,7 +53,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Reports',
+              l10n.reports,
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -60,7 +62,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       : AppColors.textPrimaryLight),
             ),
             Text(
-              'Analytics & performance overview',
+              l10n.dataAtAGlance,
               style: TextStyle(
                   fontSize: 13,
                   color: isDark
@@ -73,32 +75,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildPeriodSelector(bool isDark) {
+  Widget _buildPeriodSelector(bool isDark, L10n l10n) {
+    final periods = {
+      7: l10n.last7Days,
+      30: l10n.last30Days,
+      90: l10n.last90Days,
+    };
     return Row(
       children: [
-        Text(
-          'Period: ',
-          style: TextStyle(
-              fontSize: 13,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight),
-        ),
-        const SizedBox(width: 8),
-        ...[7, 30, 90].map((d) => Padding(
+        ...periods.entries.map((e) => Padding(
               padding: const EdgeInsets.only(right: 8),
               child: GestureDetector(
-                onTap: () => setState(() => _days = d),
+                onTap: () => setState(() => _days = e.key),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _days == d
+                    color: _days == e.key
                         ? AppColors.primary
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _days == d
+                      color: _days == e.key
                           ? AppColors.primary
                           : isDark
                               ? AppColors.borderDark
@@ -106,11 +104,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ),
                   ),
                   child: Text(
-                    '${d}d',
+                    e.value,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: _days == d
+                      color: _days == e.key
                           ? Colors.white
                           : isDark
                               ? AppColors.textSecondaryDark
@@ -124,7 +122,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildSummaryCards(AppProvider provider) {
+  Widget _buildSummaryCards(AppProvider provider, L10n l10n) {
     return GridView.count(
       crossAxisCount: 2,
       crossAxisSpacing: 12,
@@ -134,36 +132,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
       childAspectRatio: 1.6,
       children: [
         StatCard(
-          title: 'Total Spent',
-          value:
-              '${provider.currency} ${provider.totalSpent(days: _days).toStringAsFixed(0)}',
-          subtitle: 'Last $_days days',
+          title: l10n.totalSpentLabel,
+          value: provider.formatAmount(provider.totalSpent(days: _days)),
+          subtitle: l10n.isAr ? 'آخر $_days يوم' : 'Last $_days days',
           icon: Icons.shopping_cart_rounded,
           color: AppColors.danger,
         ),
         StatCard(
-          title: 'Revenue',
-          value:
-              '${provider.currency} ${provider.totalRevenue(days: _days).toStringAsFixed(0)}',
-          subtitle: 'Last $_days days',
+          title: l10n.totalRevenueLabel,
+          value: provider.formatAmount(provider.totalRevenue(days: _days)),
+          subtitle: l10n.isAr ? 'آخر $_days يوم' : 'Last $_days days',
           icon: Icons.attach_money_rounded,
           color: AppColors.success,
         ),
         StatCard(
-          title: 'Resources',
+          title: l10n.resources,
           value: provider.resources.length.toString(),
           subtitle:
-              '${provider.criticalCount + provider.lowStockCount} need attention',
+              '${provider.criticalCount + provider.lowStockCount} ${l10n.needAttention}',
           icon: Icons.inventory_2_rounded,
           color: AppColors.primary,
         ),
         StatCard(
-          title: 'Transactions',
-          value: provider
-              .recentTransactions(days: _days)
-              .length
-              .toString(),
-          subtitle: 'Last $_days days',
+          title: l10n.transactionsCountLabel,
+          value: provider.recentTransactions(days: _days).length.toString(),
+          subtitle: l10n.isAr ? 'آخر $_days يوم' : 'Last $_days days',
           icon: Icons.swap_horiz_rounded,
           color: AppColors.info,
         ),
@@ -172,7 +165,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildResourceStatusChart(
-      bool isDark, AppProvider provider) {
+      bool isDark, AppProvider provider, L10n l10n) {
     final normal = provider.resources
         .where((r) => r.status == ResourceStatus.normal)
         .length;
@@ -190,7 +183,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     return _Card(
       isDark: isDark,
-      title: 'Resource Health',
+      title: l10n.resourceHealth,
       child: SizedBox(
         height: 200,
         child: Row(
@@ -256,22 +249,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 _Legend(
                     color: AppColors.success,
-                    label: 'Normal',
+                    label: l10n.normal,
                     count: normal),
                 const SizedBox(height: 8),
                 _Legend(
                     color: AppColors.warning,
-                    label: 'Low',
+                    label: l10n.low,
                     count: low),
                 const SizedBox(height: 8),
                 _Legend(
                     color: AppColors.critical,
-                    label: 'Critical',
+                    label: l10n.critical,
                     count: critical),
                 const SizedBox(height: 8),
                 _Legend(
                     color: AppColors.inactive,
-                    label: 'Inactive',
+                    label: l10n.inactive,
                     count: inactive),
               ],
             ),
@@ -282,7 +275,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildTransactionTypeChart(
-      bool isDark, AppProvider provider) {
+      bool isDark, AppProvider provider, L10n l10n) {
     final txns = provider.recentTransactions(days: _days);
     if (txns.isEmpty) return const SizedBox();
 
@@ -317,9 +310,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ]),
     ];
 
+    final barLabels = l10n.isAr
+        ? ['مشتريات', 'استهلاك', 'مبيعات']
+        : ['Purchases', 'Consumed', 'Sales'];
+
     return _Card(
       isDark: isDark,
-      title: 'Transaction Types (${_days}d)',
+      title: '${l10n.transactionSummary} (${_days}d)',
       child: SizedBox(
         height: 180,
         child: BarChart(
@@ -333,9 +330,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
             gridData: FlGridData(
               show: true,
               getDrawingHorizontalLine: (v) => FlLine(
-                color: isDark
-                    ? AppColors.borderDark
-                    : AppColors.borderLight,
+                color:
+                    isDark ? AppColors.borderDark : AppColors.borderLight,
                 strokeWidth: 1,
               ),
               drawVerticalLine: false,
@@ -346,15 +342,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) {
-                    const labels = [
-                      'Purchases',
-                      'Consumed',
-                      'Sales'
-                    ];
+                    final idx = value.toInt();
+                    if (idx < 0 || idx >= barLabels.length) {
+                      return const SizedBox();
+                    }
                     return Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        labels[value.toInt()],
+                        barLabels[idx],
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark
@@ -393,14 +388,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildTopResourcesTable(
-      bool isDark, AppProvider provider) {
+      bool isDark, AppProvider provider, L10n l10n) {
     final resources = List.from(provider.resources)
-      ..sort((a, b) => b.dailyConsumptionRate
-          .compareTo(a.dailyConsumptionRate));
+      ..sort((a, b) =>
+          b.dailyConsumptionRate.compareTo(a.dailyConsumptionRate));
 
     return _Card(
       isDark: isDark,
-      title: 'Top Resources by Consumption Rate',
+      title: l10n.topResourcesByConsumption,
       child: Column(
         children: resources.take(5).map((r) {
           final pct = r.stockPercentage;
@@ -409,7 +404,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             child: Row(
               children: [
                 SizedBox(
-                  width: 120,
+                  width: 110,
                   child: Text(
                     r.name,
                     style: TextStyle(
@@ -425,8 +420,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
@@ -436,9 +430,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           backgroundColor: isDark
                               ? AppColors.borderDark
                               : AppColors.borderLight,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(
-                                  _statusColor(r.status)),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              _statusColor(r.status)),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -495,9 +488,7 @@ class _Card extends StatelessWidget {
   final Widget child;
 
   const _Card(
-      {required this.isDark,
-      required this.title,
-      required this.child});
+      {required this.isDark, required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -507,9 +498,7 @@ class _Card extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: isDark
-                ? AppColors.borderDark
-                : AppColors.borderLight),
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,9 +526,7 @@ class _Legend extends StatelessWidget {
   final String label;
   final int count;
   const _Legend(
-      {required this.color,
-      required this.label,
-      required this.count});
+      {required this.color, required this.label, required this.count});
 
   @override
   Widget build(BuildContext context) {
@@ -549,10 +536,7 @@ class _Legend extends StatelessWidget {
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(

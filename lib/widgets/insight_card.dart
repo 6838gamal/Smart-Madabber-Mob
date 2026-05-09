@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/insight.dart';
 import '../models/rule.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class InsightCard extends StatelessWidget {
@@ -35,6 +36,7 @@ class InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -43,9 +45,7 @@ class InsightCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _severityColor.withOpacity(0.25),
-        ),
+        border: Border.all(color: _severityColor.withOpacity(0.25)),
         boxShadow: [
           BoxShadow(
             color: _severityColor.withOpacity(0.05),
@@ -161,7 +161,7 @@ class InsightCard extends StatelessWidget {
                   children: [
                     if (onDismiss != null)
                       _ActionButton(
-                        label: 'Dismiss',
+                        label: l10n.dismiss,
                         icon: Icons.close_rounded,
                         color: isDark
                             ? AppColors.textSecondaryDark
@@ -171,7 +171,7 @@ class InsightCard extends StatelessWidget {
                     if (onResolve != null) ...[
                       const SizedBox(width: 6),
                       _ActionButton(
-                        label: 'Resolve',
+                        label: l10n.resolve,
                         icon: Icons.check_rounded,
                         color: AppColors.success,
                         onTap: onResolve!,

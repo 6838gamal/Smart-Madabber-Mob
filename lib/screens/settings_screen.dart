@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../models/rule.dart';
 import '../theme/app_theme.dart';
 
@@ -9,6 +10,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.watch<AppProvider>();
 
@@ -18,7 +20,7 @@ class SettingsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Settings',
+            l10n.settings,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -29,7 +31,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Customize your Smart Advisor experience',
+            l10n.customizeExperience,
             style: TextStyle(
               fontSize: 13,
               color: isDark
@@ -38,12 +40,14 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _Section(title: 'Appearance', isDark: isDark, children: [
+
+          // ── Appearance ──────────────────────────────────────────────────
+          _Section(title: l10n.appearance, isDark: isDark, children: [
             _SettingRow(
               isDark: isDark,
               icon: Icons.dark_mode_rounded,
-              title: 'Dark Mode',
-              subtitle: 'Switch between light and dark theme',
+              title: l10n.darkModeLabel,
+              subtitle: l10n.switchTheme,
               trailing: Switch(
                 value: provider.isDarkMode,
                 onChanged: (_) => provider.toggleDarkMode(),
@@ -52,61 +56,158 @@ class SettingsScreen extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: 16),
-          _Section(title: 'Currency', isDark: isDark, children: [
+
+          // ── Language ────────────────────────────────────────────────────
+          _Section(title: l10n.languageLabel, isDark: isDark, children: [
+            _SettingRow(
+              isDark: isDark,
+              icon: Icons.language_rounded,
+              title: l10n.languageLabel,
+              subtitle: provider.isArabic
+                  ? l10n.arabicLanguage
+                  : l10n.englishLanguage,
+              trailing: _LanguageSelector(
+                  provider: provider, isDark: isDark, l10n: l10n),
+            ),
+          ]),
+          const SizedBox(height: 16),
+
+          // ── Currency ────────────────────────────────────────────────────
+          _Section(title: l10n.currencyLabel, isDark: isDark, children: [
             Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: DropdownButtonFormField<String>(
                 value: provider.currency,
-                decoration: const InputDecoration(
-                  labelText: 'Display Currency',
+                decoration: InputDecoration(
+                  labelText: l10n.displayCurrencyLabel,
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'USD', child: Text('USD — US Dollar')),
-                  DropdownMenuItem(value: 'SAR', child: Text('SAR — Saudi Riyal')),
-                  DropdownMenuItem(value: 'AED', child: Text('AED — UAE Dirham')),
-                  DropdownMenuItem(value: 'EUR', child: Text('EUR — Euro')),
-                  DropdownMenuItem(value: 'GBP', child: Text('GBP — British Pound')),
-                  DropdownMenuItem(value: 'EGP', child: Text('EGP — Egyptian Pound')),
-                  DropdownMenuItem(value: 'KWD', child: Text('KWD — Kuwaiti Dinar')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'YER_NEW',
+                    child: Text(
+                        l10n.isAr ? 'ريال جديد — ر.ي.ج' : 'YER New — ر.ي.ج'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'YER_OLD',
+                    child: Text(
+                        l10n.isAr ? 'ريال قديم — ر.ي.ق' : 'YER Old — ر.ي.ق'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'USD',
+                    child: Text(
+                        l10n.isAr ? 'دولار أمريكي — \$' : 'US Dollar — \$'),
+                  ),
                 ],
                 onChanged: (v) => provider.setCurrency(v!),
               ),
             ),
           ]),
           const SizedBox(height: 16),
+
+          // ── Rules Engine ────────────────────────────────────────────────
           _Section(
-              title: 'Rules Engine',
+              title: l10n.rulesEngineLabel,
               isDark: isDark,
               children: provider.rules
                   .map((rule) => _RuleRow(rule: rule, isDark: isDark))
                   .toList()),
           const SizedBox(height: 16),
-          _Section(title: 'About', isDark: isDark, children: [
+
+          // ── About ────────────────────────────────────────────────────────
+          _Section(title: l10n.aboutLabel, isDark: isDark, children: [
             _SettingRow(
               isDark: isDark,
               icon: Icons.psychology_rounded,
               title: 'المدبّر الذكي — Smart Advisor',
-              subtitle: 'Version 1.0.0 · Offline-first decision engine',
+              subtitle: l10n.versionInfo,
               trailing: const SizedBox(),
             ),
             _SettingRow(
               isDark: isDark,
               icon: Icons.storage_rounded,
-              title: 'Data Storage',
-              subtitle: 'All data stored locally on your device',
+              title: l10n.dataStorageLabel,
+              subtitle: l10n.dataStoredLocally,
               trailing: const SizedBox(),
             ),
             _SettingRow(
               isDark: isDark,
               icon: Icons.info_rounded,
-              title: 'System',
+              title: l10n.systemLabel,
               subtitle:
-                  '${provider.resources.length} resources · ${provider.transactions.length} transactions · ${provider.insights.length} insights',
+                  '${provider.resources.length} ${l10n.resources} · ${provider.transactions.length} ${l10n.transactions} · ${provider.insights.length} ${l10n.insights}',
               trailing: const SizedBox(),
             ),
           ]),
         ],
+      ),
+    );
+  }
+}
+
+class _LanguageSelector extends StatelessWidget {
+  final AppProvider provider;
+  final bool isDark;
+  final L10n l10n;
+
+  const _LanguageSelector(
+      {required this.provider, required this.isDark, required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _LangBtn(
+          label: 'ع',
+          selected: provider.isArabic,
+          onTap: () => provider.setLanguage('ar'),
+        ),
+        const SizedBox(width: 6),
+        _LangBtn(
+          label: 'EN',
+          selected: !provider.isArabic,
+          onTap: () => provider.setLanguage('en'),
+        ),
+      ],
+    );
+  }
+}
+
+class _LangBtn extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _LangBtn(
+      {required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 32,
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary
+              : AppColors.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary
+                : AppColors.primary.withOpacity(0.2),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: selected ? Colors.white : AppColors.primary,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -118,9 +219,7 @@ class _Section extends StatelessWidget {
   final List<Widget> children;
 
   const _Section(
-      {required this.title,
-      required this.isDark,
-      required this.children});
+      {required this.title, required this.isDark, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +227,7 @@ class _Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          padding: const EdgeInsets.only(bottom: 8),
           child: Text(
             title.toUpperCase(),
             style: TextStyle(
@@ -143,13 +242,10 @@ class _Section extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color:
-                isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDark
-                  ? AppColors.borderDark
-                  : AppColors.borderLight,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
             ),
           ),
           child: Column(
@@ -195,8 +291,7 @@ class _SettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Container(
@@ -235,6 +330,7 @@ class _SettingRow extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           trailing,
         ],
       ),
@@ -252,8 +348,7 @@ class _RuleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.read<AppProvider>();
     return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           Container(
@@ -267,9 +362,7 @@ class _RuleRow extends StatelessWidget {
             child: Icon(
               Icons.rule_rounded,
               size: 17,
-              color: rule.enabled
-                  ? AppColors.success
-                  : AppColors.inactive,
+              color: rule.enabled ? AppColors.success : AppColors.inactive,
             ),
           ),
           const SizedBox(width: 12),
@@ -303,8 +396,7 @@ class _RuleRow extends StatelessWidget {
             value: rule.enabled,
             onChanged: (_) => provider.toggleRule(rule.id),
             activeColor: AppColors.primary,
-            materialTapTargetSize:
-                MaterialTapTargetSize.shrinkWrap,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
       ),

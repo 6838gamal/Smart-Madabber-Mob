@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../widgets/decision_card.dart';
 import '../widgets/resource_card.dart';
 import '../widgets/insight_card.dart';
@@ -35,12 +36,13 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final border = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return Column(
       children: [
-        _buildHeader(context, isDark, border),
+        _buildHeader(context, isDark, l10n),
         Container(
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
           child: TabBar(
@@ -54,11 +56,11 @@ class _DashboardScreenState extends State<DashboardScreen>
             labelStyle:
                 const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             unselectedLabelStyle: const TextStyle(fontSize: 13),
-            tabs: const [
-              Tab(text: 'Today'),
-              Tab(text: 'Trends'),
-              Tab(text: 'Stock'),
-              Tab(text: 'Intelligence'),
+            tabs: [
+              Tab(text: l10n.today),
+              Tab(text: l10n.trends),
+              Tab(text: l10n.stock),
+              Tab(text: l10n.intelligence),
             ],
           ),
         ),
@@ -78,7 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark, Color border) {
+  Widget _buildHeader(BuildContext context, bool isDark, L10n l10n) {
     final provider = context.watch<AppProvider>();
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
@@ -90,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Dashboard',
+                l10n.dashboard,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -100,7 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
               ),
               Text(
-                'Your intelligent overview',
+                l10n.intelligentOverview,
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark
@@ -113,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => provider.refreshInsights(),
-            tooltip: 'Refresh Insights',
+            tooltip: l10n.refreshInsights,
             color: isDark
                 ? AppColors.textSecondaryDark
                 : AppColors.textSecondaryLight,
@@ -130,7 +132,7 @@ class _TodayTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = L10n.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -140,12 +142,11 @@ class _TodayTab extends StatelessWidget {
           DecisionCard(
             insight: provider.decisionOfTheDay,
             onDismiss: provider.decisionOfTheDay != null
-                ? () => provider.resolveInsight(
-                    provider.decisionOfTheDay!.id)
+                ? () => provider.resolveInsight(provider.decisionOfTheDay!.id)
                 : null,
           ),
           const SizedBox(height: 24),
-          _SectionTitle(title: 'Quick Stats'),
+          _SectionTitle(title: l10n.quickStats),
           const SizedBox(height: 12),
           GridView.count(
             crossAxisCount: 2,
@@ -156,31 +157,31 @@ class _TodayTab extends StatelessWidget {
             childAspectRatio: 1.6,
             children: [
               StatCard(
-                title: 'Total Resources',
+                title: l10n.totalResources,
                 value: provider.resources.length.toString(),
                 icon: Icons.inventory_2_rounded,
                 color: AppColors.primary,
                 onTap: () => provider.navigateTo(AppScreen.resources),
               ),
               StatCard(
-                title: 'Active Alerts',
+                title: l10n.activeAlerts,
                 value: provider.activeInsights.length.toString(),
-                subtitle: 'Need attention',
+                subtitle: l10n.needAttention,
                 icon: Icons.notifications_active_rounded,
                 color: AppColors.warning,
                 onTap: () => provider.navigateTo(AppScreen.insights),
               ),
               StatCard(
-                title: 'Critical',
+                title: l10n.critical,
                 value: provider.criticalCount.toString(),
-                subtitle: 'Immediate action',
+                subtitle: l10n.immediateAction,
                 icon: Icons.warning_rounded,
                 color: AppColors.critical,
               ),
               StatCard(
-                title: 'Low Stock',
+                title: l10n.lowStock,
                 value: provider.lowStockCount.toString(),
-                subtitle: 'Restock soon',
+                subtitle: l10n.restockSoon,
                 icon: Icons.trending_down_rounded,
                 color: AppColors.warning,
               ),
@@ -189,10 +190,10 @@ class _TodayTab extends StatelessWidget {
           const SizedBox(height: 24),
           if (provider.activeInsights.isNotEmpty) ...[
             _SectionTitle(
-              title: 'Active Alerts',
+              title: l10n.activeAlerts,
               trailing: TextButton(
                 onPressed: () => provider.navigateTo(AppScreen.insights),
-                child: const Text('See all'),
+                child: Text(l10n.seeAll),
               ),
             ),
             const SizedBox(height: 12),
@@ -213,6 +214,7 @@ class _TrendsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final recent7 = provider.recentTransactions(days: 7);
     final recent30 = provider.recentTransactions(days: 30);
@@ -226,9 +228,8 @@ class _TrendsTab extends StatelessWidget {
             children: [
               Expanded(
                 child: StatCard(
-                  title: 'Spent (30d)',
-                  value:
-                      '${provider.currency} ${provider.totalSpent(days: 30).toStringAsFixed(0)}',
+                  title: l10n.spent30d,
+                  value: provider.formatAmount(provider.totalSpent(days: 30)),
                   icon: Icons.shopping_cart_rounded,
                   color: AppColors.danger,
                 ),
@@ -236,9 +237,9 @@ class _TrendsTab extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: StatCard(
-                  title: 'Revenue (30d)',
+                  title: l10n.revenue30d,
                   value:
-                      '${provider.currency} ${provider.totalRevenue(days: 30).toStringAsFixed(0)}',
+                      provider.formatAmount(provider.totalRevenue(days: 30)),
                   icon: Icons.attach_money_rounded,
                   color: AppColors.success,
                 ),
@@ -250,7 +251,7 @@ class _TrendsTab extends StatelessWidget {
             children: [
               Expanded(
                 child: StatCard(
-                  title: 'Transactions (7d)',
+                  title: l10n.txns7d,
                   value: recent7.length.toString(),
                   icon: Icons.swap_horiz_rounded,
                   color: AppColors.info,
@@ -259,7 +260,7 @@ class _TrendsTab extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: StatCard(
-                  title: 'Transactions (30d)',
+                  title: l10n.txns30d,
                   value: recent30.length.toString(),
                   icon: Icons.history_rounded,
                   color: AppColors.secondary,
@@ -268,22 +269,20 @@ class _TrendsTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          _SectionTitle(title: 'Recent Activity'),
+          _SectionTitle(title: l10n.recentActivity),
           const SizedBox(height: 12),
           if (recent7.isEmpty)
-            const EmptyState(
+            EmptyState(
               emoji: '📊',
-              title: 'No recent transactions',
-              subtitle:
-                  'Add transactions to see weekly trends here.',
+              title: l10n.noRecentTransactions,
+              subtitle: l10n.addTransactionsForTrends,
             )
           else
             ...recent7.take(10).map((txn) {
               final resource = provider.resources
                   .where((r) => r.id == txn.resourceId)
                   .firstOrNull;
-              final resourceName =
-                  resource?.name ?? 'Unknown Resource';
+              final resourceName = resource?.name ?? '—';
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(14),
@@ -317,7 +316,7 @@ class _TrendsTab extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${txn.type.label} • ${txn.quantity} units',
+                            '${txn.type.label} · ${txn.quantity.toStringAsFixed(1)} ${l10n.units}',
                             style: TextStyle(
                               fontSize: 11,
                               color: isDark
@@ -330,7 +329,7 @@ class _TrendsTab extends StatelessWidget {
                     ),
                     if (txn.price > 0)
                       Text(
-                        '${provider.currency} ${txn.price.toStringAsFixed(2)}',
+                        provider.formatAmount(txn.price),
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
@@ -355,18 +354,16 @@ class _StockTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final l10n = L10n.of(context);
     final resources = provider.resources;
-    final critical = resources
-        .where((r) => r.status == ResourceStatus.critical)
-        .toList();
+    final critical =
+        resources.where((r) => r.status == ResourceStatus.critical).toList();
     final low =
         resources.where((r) => r.status == ResourceStatus.low).toList();
-    final normal = resources
-        .where((r) => r.status == ResourceStatus.normal)
-        .toList();
-    final inactive = resources
-        .where((r) => r.status == ResourceStatus.inactive)
-        .toList();
+    final normal =
+        resources.where((r) => r.status == ResourceStatus.normal).toList();
+    final inactive =
+        resources.where((r) => r.status == ResourceStatus.inactive).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -375,94 +372,62 @@ class _StockTab extends StatelessWidget {
         children: [
           if (critical.isNotEmpty) ...[
             _SectionTitle(
-                title: '🚨 Critical (${critical.length})'),
+                title: '${l10n.criticalSection} (${critical.length})'),
             const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate:
-                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.5,
-              ),
-              itemCount: critical.length,
-              itemBuilder: (_, i) => ResourceCard(
-                resource: critical[i],
-                onTap: () =>
-                    provider.navigateTo(AppScreen.resources),
-              ),
-            ),
+            _ResourceGrid(resources: critical,
+                onTap: () => provider.navigateTo(AppScreen.resources)),
             const SizedBox(height: 20),
           ],
           if (low.isNotEmpty) ...[
             _SectionTitle(
-                title: '⚠️ Low Stock (${low.length})'),
+                title: '${l10n.lowStockSection} (${low.length})'),
             const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate:
-                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.5,
-              ),
-              itemCount: low.length,
-              itemBuilder: (_, i) =>
-                  ResourceCard(resource: low[i]),
-            ),
+            _ResourceGrid(resources: low),
             const SizedBox(height: 20),
           ],
           if (inactive.isNotEmpty) ...[
             _SectionTitle(
-                title: '😴 Inactive (${inactive.length})'),
+                title: '${l10n.inactiveSection} (${inactive.length})'),
             const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate:
-                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.5,
-              ),
-              itemCount: inactive.length,
-              itemBuilder: (_, i) =>
-                  ResourceCard(resource: inactive[i]),
-            ),
+            _ResourceGrid(resources: inactive),
             const SizedBox(height: 20),
           ],
           if (normal.isNotEmpty) ...[
             _SectionTitle(
-                title: '✅ Normal (${normal.length})'),
+                title: '${l10n.normalSection} (${normal.length})'),
             const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate:
-                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.5,
-              ),
-              itemCount: normal.length,
-              itemBuilder: (_, i) =>
-                  ResourceCard(resource: normal[i]),
-            ),
+            _ResourceGrid(resources: normal),
           ],
           if (resources.isEmpty)
-            const EmptyState(
+            EmptyState(
               emoji: '📦',
-              title: 'No resources yet',
-              subtitle: 'Add resources to track their status.',
+              title: l10n.noResourcesYet,
+              subtitle: l10n.addResourcesToTrack,
             ),
         ],
       ),
+    );
+  }
+}
+
+class _ResourceGrid extends StatelessWidget {
+  final List<Resource> resources;
+  final VoidCallback? onTap;
+  const _ResourceGrid({required this.resources, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 300,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.5,
+      ),
+      itemCount: resources.length,
+      itemBuilder: (_, i) => ResourceCard(resource: resources[i], onTap: onTap),
     );
   }
 }
@@ -473,6 +438,7 @@ class _IntelligenceTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
@@ -485,8 +451,7 @@ class _IntelligenceTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.info.withOpacity(0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: AppColors.info.withOpacity(0.2)),
+              border: Border.all(color: AppColors.info.withOpacity(0.2)),
             ),
             child: Row(
               children: [
@@ -495,7 +460,7 @@ class _IntelligenceTab extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'The rules engine continuously monitors your resources and automatically generates actionable decisions.',
+                    l10n.engineDescription,
                     style: TextStyle(
                       fontSize: 13,
                       color: isDark
@@ -509,7 +474,8 @@ class _IntelligenceTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           _SectionTitle(
-              title: 'Active Rules (${provider.rules.where((r) => r.enabled).length})'),
+              title:
+                  '${l10n.activeRulesLabel} (${provider.rules.where((r) => r.enabled).length})'),
           const SizedBox(height: 12),
           ...provider.rules.map((rule) => Container(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -540,8 +506,7 @@ class _IntelligenceTab extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             rule.name,
@@ -567,22 +532,19 @@ class _IntelligenceTab extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _SeverityPill(
-                        severity: rule.severity),
+                    _SeverityPill(severity: rule.severity),
                     const SizedBox(width: 8),
                     Switch(
                       value: rule.enabled,
-                      onChanged: (_) =>
-                          provider.toggleRule(rule.id),
+                      onChanged: (_) => provider.toggleRule(rule.id),
                       activeColor: AppColors.primary,
-                      materialTapTargetSize:
-                          MaterialTapTargetSize.shrinkWrap,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ],
                 ),
               )),
           const SizedBox(height: 24),
-          _SectionTitle(title: 'Engine Summary'),
+          _SectionTitle(title: l10n.engineSummary),
           const SizedBox(height: 12),
           GridView.count(
             shrinkWrap: true,
@@ -593,19 +555,19 @@ class _IntelligenceTab extends StatelessWidget {
             childAspectRatio: 2,
             children: [
               StatCard(
-                title: 'Insights Generated',
+                title: l10n.insightsGenerated,
                 value: provider.insights.length.toString(),
                 icon: Icons.auto_awesome_rounded,
                 color: AppColors.info,
               ),
               StatCard(
-                title: 'Active',
+                title: l10n.active,
                 value: provider.activeInsights.length.toString(),
                 icon: Icons.notifications_active_rounded,
                 color: AppColors.warning,
               ),
               StatCard(
-                title: 'Rules Active',
+                title: l10n.rulesActive,
                 value: provider.rules
                     .where((r) => r.enabled)
                     .length
@@ -614,7 +576,7 @@ class _IntelligenceTab extends StatelessWidget {
                 color: AppColors.success,
               ),
               StatCard(
-                title: 'Total Rules',
+                title: l10n.totalRulesLabel,
                 value: provider.rules.length.toString(),
                 icon: Icons.settings_rounded,
                 color: AppColors.secondary,
@@ -676,8 +638,7 @@ class _SeverityPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: _color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
@@ -686,7 +647,7 @@ class _SeverityPill extends StatelessWidget {
         severity.label,
         style: TextStyle(
           fontSize: 10,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
           color: _color,
         ),
       ),

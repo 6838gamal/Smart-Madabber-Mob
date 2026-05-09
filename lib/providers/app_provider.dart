@@ -17,6 +17,7 @@ enum AppScreen {
   insights,
   reports,
   settings,
+  help,
 }
 
 class AppProvider extends ChangeNotifier {
@@ -30,9 +31,10 @@ class AppProvider extends ChangeNotifier {
   AppScreen _currentScreen = AppScreen.dashboard;
   bool _isDarkMode = false;
   bool _isLoading = true;
-  String _currency = 'USD';
+  String _currency = 'YER_NEW';
+  String _language = 'ar';
 
-  // Getters
+  // ── Getters ───────────────────────────────────────────────────────────────
   List<Resource> get resources => List.unmodifiable(_resources);
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   List<Rule> get rules => List.unmodifiable(_rules);
@@ -41,6 +43,8 @@ class AppProvider extends ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
   bool get isLoading => _isLoading;
   String get currency => _currency;
+  String get language => _language;
+  bool get isArabic => _language == 'ar';
 
   List<Insight> get activeInsights =>
       _insights.where((i) => i.isActive).toList()
@@ -48,16 +52,41 @@ class AppProvider extends ChangeNotifier {
 
   Insight? get decisionOfTheDay => RulesEngine.decisionOfTheDay(_insights);
 
-  int get criticalCount => _resources
-      .where((r) => r.status == ResourceStatus.critical)
-      .length;
+  int get criticalCount =>
+      _resources.where((r) => r.status == ResourceStatus.critical).length;
 
-  int get lowStockCount => _resources
-      .where((r) => r.status == ResourceStatus.low)
-      .length;
+  int get lowStockCount =>
+      _resources.where((r) => r.status == ResourceStatus.low).length;
 
-  // ─── Init ─────────────────────────────────────────────────────────────────
+  // ── Currency formatting ───────────────────────────────────────────────────
+  String formatAmount(double amount) {
+    final n = amount.toStringAsFixed(0);
+    switch (_currency) {
+      case 'YER_NEW':
+        return '$n ر.ي.ج';
+      case 'YER_OLD':
+        return '$n ر.ي.ق';
+      case 'USD':
+        return '\$$n';
+      default:
+        return '$n $_currency';
+    }
+  }
 
+  String get currencySymbol {
+    switch (_currency) {
+      case 'YER_NEW':
+        return 'ر.ي.ج';
+      case 'YER_OLD':
+        return 'ر.ي.ق';
+      case 'USD':
+        return '\$';
+      default:
+        return _currency;
+    }
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
   Future<void> init() async {
     await _storage.init();
 
@@ -73,7 +102,8 @@ class AppProvider extends ChangeNotifier {
 
     final settings = await _storage.loadSettings();
     _isDarkMode = settings['darkMode'] as bool? ?? false;
-    _currency = settings['currency'] as String? ?? 'USD';
+    _currency = settings['currency'] as String? ?? 'YER_NEW';
+    _language = settings['language'] as String? ?? 'ar';
 
     _runEngine();
     _isLoading = false;
@@ -109,15 +139,21 @@ class AppProvider extends ChangeNotifier {
     ]);
   }
 
-  // ─── Navigation ───────────────────────────────────────────────────────────
+  Future<void> _saveSettings() async {
+    await _storage.saveSettings({
+      'darkMode': _isDarkMode,
+      'currency': _currency,
+      'language': _language,
+    });
+  }
 
+  // ── Navigation ────────────────────────────────────────────────────────────
   void navigateTo(AppScreen screen) {
     _currentScreen = screen;
     notifyListeners();
   }
 
-  // ─── Resources ────────────────────────────────────────────────────────────
-
+  // ── Resources ─────────────────────────────────────────────────────────────
   Future<void> addResource(Resource resource) async {
     _resources = [..._resources, resource];
     _runEngine();
@@ -126,7 +162,8 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> updateResource(Resource resource) async {
-    _resources = _resources.map((r) => r.id == resource.id ? resource : r).toList();
+    _resources =
+        _resources.map((r) => r.id == resource.id ? resource : r).toList();
     _runEngine();
     await _persist();
     notifyListeners();
@@ -144,18 +181,16 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─── Transactions ─────────────────────────────────────────────────────────
-
+  // ── Transactions ──────────────────────────────────────────────────────────
   Future<void> addTransaction(Transaction txn) async {
     _transactions = [..._transactions, txn];
 
-    // Update resource quantity
     final idx = _resources.indexWhere((r) => r.id == txn.resourceId);
     if (idx != -1) {
       final r = _resources[idx];
-      final newQty = (r.currentQuantity + txn.signedQuantity).clamp(0.0, double.infinity);
+      final newQty =
+          (r.currentQuantity + txn.signedQuantity).clamp(0.0, double.infinity);
 
-      // Recalculate daily consumption rate from last 7 days
       final recentConsume = _transactions
           .where((t) =>
               t.resourceId == txn.resourceId &&
@@ -166,7 +201,8 @@ class AppProvider extends ChangeNotifier {
 
       _resources[idx] = r.copyWith(
         currentQuantity: newQty,
-        dailyConsumptionRate: newRate > 0 ? newRate : r.dailyConsumptionRate,
+        dailyConsumptionRate:
+            newRate > 0 ? newRate : r.dailyConsumptionRate,
         lastActivityAt: txn.date,
       );
     }
@@ -190,10 +226,11 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─── Rules ────────────────────────────────────────────────────────────────
-
+  // ── Rules ─────────────────────────────────────────────────────────────────
   Future<void> toggleRule(String id) async {
-    _rules = _rules.map((r) => r.id == id ? r.copyWith(enabled: !r.enabled) : r).toList();
+    _rules = _rules
+        .map((r) => r.id == id ? r.copyWith(enabled: !r.enabled) : r)
+        .toList();
     _runEngine();
     await Future.wait([
       _storage.saveRules(_rules),
@@ -217,11 +254,11 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─── Insights ─────────────────────────────────────────────────────────────
-
+  // ── Insights ──────────────────────────────────────────────────────────────
   Future<void> dismissInsight(String id) async {
     _insights = _insights
-        .map((i) => i.id == id ? i.copyWith(status: InsightStatus.dismissed) : i)
+        .map((i) =>
+            i.id == id ? i.copyWith(status: InsightStatus.dismissed) : i)
         .toList();
     await _storage.saveInsights(_insights);
     notifyListeners();
@@ -229,7 +266,8 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> resolveInsight(String id) async {
     _insights = _insights
-        .map((i) => i.id == id ? i.copyWith(status: InsightStatus.resolved) : i)
+        .map((i) =>
+            i.id == id ? i.copyWith(status: InsightStatus.resolved) : i)
         .toList();
     await _storage.saveInsights(_insights);
     notifyListeners();
@@ -241,22 +279,26 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─── Settings ─────────────────────────────────────────────────────────────
-
+  // ── Settings ──────────────────────────────────────────────────────────────
   Future<void> toggleDarkMode() async {
     _isDarkMode = !_isDarkMode;
-    await _storage.saveSettings({'darkMode': _isDarkMode, 'currency': _currency});
+    await _saveSettings();
     notifyListeners();
   }
 
   Future<void> setCurrency(String c) async {
     _currency = c;
-    await _storage.saveSettings({'darkMode': _isDarkMode, 'currency': _currency});
+    await _saveSettings();
     notifyListeners();
   }
 
-  // ─── Analytics helpers ────────────────────────────────────────────────────
+  Future<void> setLanguage(String lang) async {
+    _language = lang;
+    await _saveSettings();
+    notifyListeners();
+  }
 
+  // ── Analytics helpers ─────────────────────────────────────────────────────
   List<Transaction> transactionsForResource(String resourceId) =>
       _transactions.where((t) => t.resourceId == resourceId).toList()
         ..sort((a, b) => b.date.compareTo(a.date));
@@ -270,14 +312,16 @@ class AppProvider extends ChangeNotifier {
   double totalSpent({int days = 30}) {
     final cutoff = DateTime.now().subtract(Duration(days: days));
     return _transactions
-        .where((t) => t.type == TransactionType.purchase && t.date.isAfter(cutoff))
+        .where((t) =>
+            t.type == TransactionType.purchase && t.date.isAfter(cutoff))
         .fold(0.0, (s, t) => s + t.price);
   }
 
   double totalRevenue({int days = 30}) {
     final cutoff = DateTime.now().subtract(Duration(days: days));
     return _transactions
-        .where((t) => t.type == TransactionType.sale && t.date.isAfter(cutoff))
+        .where(
+            (t) => t.type == TransactionType.sale && t.date.isAfter(cutoff))
         .fold(0.0, (s, t) => s + (t.price * t.quantity));
   }
 

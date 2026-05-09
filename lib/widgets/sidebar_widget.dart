@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class SidebarWidget extends StatelessWidget {
@@ -9,8 +10,8 @@ class SidebarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final l10n = L10n.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
     final bgColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
 
@@ -18,126 +19,125 @@ class SidebarWidget extends StatelessWidget {
       width: 240,
       decoration: BoxDecoration(
         color: bgColor,
-        border: Border(right: BorderSide(color: borderColor)),
+        border: Border(
+          right: BorderSide(color: borderColor),
+          left: BorderSide(color: borderColor),
+        ),
       ),
       child: Column(
         children: [
-          _buildLogo(context, isDark),
-          const SizedBox(height: 8),
+          _buildLogo(context, isDark, l10n),
+          const SizedBox(height: 4),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               children: [
-                _buildItem(
-                  context,
-                  icon: Icons.dashboard_rounded,
-                  label: 'Dashboard',
-                  screen: AppScreen.dashboard,
-                  provider: provider,
-                  badge: provider.criticalCount + provider.lowStockCount > 0
-                      ? provider.criticalCount + provider.lowStockCount
-                      : null,
-                ),
-                _buildItem(
-                  context,
-                  icon: Icons.inventory_2_rounded,
-                  label: 'Resources',
-                  screen: AppScreen.resources,
-                  provider: provider,
-                ),
-                _buildItem(
-                  context,
-                  icon: Icons.swap_horiz_rounded,
-                  label: 'Transactions',
-                  screen: AppScreen.transactions,
-                  provider: provider,
-                ),
-                _buildItem(
-                  context,
-                  icon: Icons.lightbulb_rounded,
-                  label: 'Insights',
-                  screen: AppScreen.insights,
-                  provider: provider,
-                  badge: provider.activeInsights.length > 0
-                      ? provider.activeInsights.length
-                      : null,
-                ),
-                _buildItem(
-                  context,
-                  icon: Icons.bar_chart_rounded,
-                  label: 'Reports',
-                  screen: AppScreen.reports,
-                  provider: provider,
-                ),
+                _buildItem(context,
+                    icon: Icons.dashboard_rounded,
+                    label: l10n.dashboard,
+                    screen: AppScreen.dashboard,
+                    provider: provider,
+                    isDark: isDark,
+                    badge: provider.criticalCount + provider.lowStockCount > 0
+                        ? provider.criticalCount + provider.lowStockCount
+                        : null),
+                _buildItem(context,
+                    icon: Icons.inventory_2_rounded,
+                    label: l10n.resources,
+                    screen: AppScreen.resources,
+                    provider: provider,
+                    isDark: isDark),
+                _buildItem(context,
+                    icon: Icons.swap_horiz_rounded,
+                    label: l10n.transactions,
+                    screen: AppScreen.transactions,
+                    provider: provider,
+                    isDark: isDark),
+                _buildItem(context,
+                    icon: Icons.lightbulb_rounded,
+                    label: l10n.insights,
+                    screen: AppScreen.insights,
+                    provider: provider,
+                    isDark: isDark,
+                    badge: provider.activeInsights.isNotEmpty
+                        ? provider.activeInsights.length
+                        : null),
+                _buildItem(context,
+                    icon: Icons.bar_chart_rounded,
+                    label: l10n.reports,
+                    screen: AppScreen.reports,
+                    provider: provider,
+                    isDark: isDark),
                 const SizedBox(height: 8),
                 Divider(color: borderColor, height: 1),
                 const SizedBox(height: 8),
-                _buildItem(
-                  context,
-                  icon: Icons.settings_rounded,
-                  label: 'Settings',
-                  screen: AppScreen.settings,
-                  provider: provider,
-                ),
+                _buildItem(context,
+                    icon: Icons.settings_rounded,
+                    label: l10n.settings,
+                    screen: AppScreen.settings,
+                    provider: provider,
+                    isDark: isDark),
+                _buildItem(context,
+                    icon: Icons.help_outline_rounded,
+                    label: l10n.help,
+                    screen: AppScreen.help,
+                    provider: provider,
+                    isDark: isDark),
               ],
             ),
           ),
-          _buildFooter(context, provider, isDark),
+          _buildFooter(context, provider, isDark, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildLogo(BuildContext context, bool isDark) {
+  Widget _buildLogo(BuildContext context, bool isDark, L10n l10n) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.secondary],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.psychology_rounded,
+                color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.appName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
                   ),
-                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.psychology_rounded,
-                    color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'المدبّر الذكي',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? AppColors.textPrimaryDark
-                            : AppColors.textPrimaryLight,
-                      ),
-                    ),
-                    Text(
-                      'Smart Advisor',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ],
+                Text(
+                  l10n.appSubtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -150,11 +150,10 @@ class SidebarWidget extends StatelessWidget {
     required String label,
     required AppScreen screen,
     required AppProvider provider,
+    required bool isDark,
     int? badge,
   }) {
     final isSelected = provider.currentScreen == screen;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
@@ -166,8 +165,7 @@ class SidebarWidget extends StatelessWidget {
           onTap: () => provider.navigateTo(screen),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.primary.withOpacity(0.12)
@@ -191,9 +189,8 @@ class SidebarWidget extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                       color: isSelected
                           ? AppColors.primary
                           : isDark
@@ -227,36 +224,87 @@ class SidebarWidget extends StatelessWidget {
   }
 
   Widget _buildFooter(
-      BuildContext context, AppProvider provider, bool isDark) {
+      BuildContext context, AppProvider provider, bool isDark, L10n l10n) {
+    final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+    final secondary =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: borderColor)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
         children: [
-          Icon(
-            provider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-            size: 16,
-            color: isDark
-                ? AppColors.textSecondaryDark
-                : AppColors.textSecondaryLight,
+          // Dark mode row
+          Row(
+            children: [
+              Icon(
+                provider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                size: 15,
+                color: secondary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                provider.isDarkMode ? l10n.darkMode : l10n.lightMode,
+                style: TextStyle(fontSize: 12, color: secondary),
+              ),
+              const Spacer(),
+              Switch(
+                value: provider.isDarkMode,
+                onChanged: (_) => provider.toggleDarkMode(),
+                activeColor: AppColors.primary,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            provider.isDarkMode ? 'Dark Mode' : 'Light Mode',
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
-            ),
-          ),
-          const Spacer(),
-          Switch(
-            value: provider.isDarkMode,
-            onChanged: (_) => provider.toggleDarkMode(),
-            activeColor: AppColors.primary,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          const SizedBox(height: 8),
+          // Language toggle row
+          Row(
+            children: [
+              Icon(Icons.language_rounded, size: 15, color: secondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  provider.isArabic ? l10n.arabicLanguage : l10n.englishLanguage,
+                  style: TextStyle(fontSize: 12, color: secondary),
+                ),
+              ),
+              _LangToggle(provider: provider, l10n: l10n),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LangToggle extends StatelessWidget {
+  final AppProvider provider;
+  final L10n l10n;
+  const _LangToggle({required this.provider, required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () =>
+          provider.setLanguage(provider.isArabic ? 'en' : 'ar'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        ),
+        child: Text(
+          provider.isArabic ? 'EN' : 'ع',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../models/resource.dart';
 import '../models/transaction.dart';
 import '../theme/app_theme.dart';
@@ -21,6 +22,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     var filtered = provider.resources.where((r) {
@@ -33,17 +35,17 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
 
     return Column(
       children: [
-        _buildHeader(context, isDark, provider),
+        _buildHeader(context, isDark, provider, l10n),
         Expanded(
           child: filtered.isEmpty
               ? EmptyState(
                   emoji: '📦',
-                  title: 'No resources found',
+                  title: l10n.noResourcesFound,
                   subtitle: _search.isNotEmpty
-                      ? 'Try a different search term.'
-                      : 'Start by adding your first resource.',
+                      ? l10n.tryDifferentSearch
+                      : l10n.startByAdding,
                   actionLabel:
-                      _search.isEmpty ? 'Add Resource' : null,
+                      _search.isEmpty ? l10n.addResource : null,
                   onAction: _search.isEmpty
                       ? () => _showAddResource(context)
                       : null,
@@ -62,7 +64,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   }
 
   Widget _buildHeader(
-      BuildContext context, bool isDark, AppProvider provider) {
+      BuildContext context, bool isDark, AppProvider provider, L10n l10n) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -73,7 +75,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Resources',
+                l10n.resources,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -85,16 +87,16 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               ElevatedButton.icon(
                 onPressed: () => _showAddResource(context),
                 icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add Resource'),
+                label: Text(l10n.addResource),
               ),
             ],
           ),
           const SizedBox(height: 12),
           TextField(
-            decoration: const InputDecoration(
-              hintText: 'Search resources...',
+            decoration: InputDecoration(
+              hintText: l10n.searchResources,
               prefixIcon:
-                  Icon(Icons.search_rounded, size: 18),
+                  const Icon(Icons.search_rounded, size: 18),
             ),
             onChanged: (v) => setState(() => _search = v),
           ),
@@ -104,14 +106,14 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             child: Row(
               children: [
                 _FilterChip(
-                  label: 'All',
+                  label: l10n.all,
                   selected: _filterStatus == null,
                   onTap: () =>
                       setState(() => _filterStatus = null),
                 ),
                 const SizedBox(width: 6),
                 _FilterChip(
-                  label: '🚨 Critical',
+                  label: '🚨 ${l10n.critical}',
                   selected:
                       _filterStatus == ResourceStatus.critical,
                   color: AppColors.critical,
@@ -120,16 +122,15 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                 ),
                 const SizedBox(width: 6),
                 _FilterChip(
-                  label: '⚠️ Low',
-                  selected:
-                      _filterStatus == ResourceStatus.low,
+                  label: '⚠️ ${l10n.low}',
+                  selected: _filterStatus == ResourceStatus.low,
                   color: AppColors.warning,
                   onTap: () => setState(
                       () => _filterStatus = ResourceStatus.low),
                 ),
                 const SizedBox(width: 6),
                 _FilterChip(
-                  label: '✅ Normal',
+                  label: '✅ ${l10n.normal}',
                   selected:
                       _filterStatus == ResourceStatus.normal,
                   color: AppColors.success,
@@ -171,6 +172,7 @@ class _ResourceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.read<AppProvider>();
     final pct = resource.stockPercentage;
@@ -269,7 +271,7 @@ class _ResourceRow extends StatelessWidget {
                           _ResourceDialog(resource: resource),
                     );
                   } else if (v == 'delete') {
-                    _confirmDelete(context, provider);
+                    _confirmDelete(context, provider, l10n);
                   } else if (v == 'transact') {
                     showDialog(
                       context: context,
@@ -279,29 +281,29 @@ class _ResourceRow extends StatelessWidget {
                   }
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                       value: 'transact',
                       child: Row(children: [
-                        Icon(Icons.swap_horiz_rounded, size: 16),
-                        SizedBox(width: 8),
-                        Text('Add Transaction'),
+                        const Icon(Icons.swap_horiz_rounded, size: 16),
+                        const SizedBox(width: 8),
+                        Text(l10n.addTransaction),
                       ])),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                       value: 'edit',
                       child: Row(children: [
-                        Icon(Icons.edit_rounded, size: 16),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const Icon(Icons.edit_rounded, size: 16),
+                        const SizedBox(width: 8),
+                        Text(l10n.edit),
                       ])),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                       value: 'delete',
                       child: Row(children: [
-                        Icon(Icons.delete_rounded,
+                        const Icon(Icons.delete_rounded,
                             size: 16, color: AppColors.danger),
-                        SizedBox(width: 8),
-                        Text('Delete',
-                            style:
-                                TextStyle(color: AppColors.danger)),
+                        const SizedBox(width: 8),
+                        Text(l10n.delete,
+                            style: const TextStyle(
+                                color: AppColors.danger)),
                       ])),
                 ],
               ),
@@ -327,7 +329,7 @@ class _ResourceRow extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'min: ${resource.minThreshold} ${resource.unit}',
+                          '${l10n.minPrefix}${resource.minThreshold} ${resource.unit}',
                           style: TextStyle(
                             fontSize: 11,
                             color: isDark
@@ -360,7 +362,7 @@ class _ResourceRow extends StatelessWidget {
                   children: [
                     Text(
                       resource.daysRemaining.isFinite
-                          ? '~${resource.daysRemaining.toStringAsFixed(0)}d left'
+                          ? '~${resource.daysRemaining.toStringAsFixed(0)}d'
                           : '∞',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -405,17 +407,18 @@ class _ResourceRow extends StatelessWidget {
     }
   }
 
-  void _confirmDelete(BuildContext context, AppProvider provider) {
+  void _confirmDelete(
+      BuildContext context, AppProvider provider, L10n l10n) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete Resource'),
+        title: Text(l10n.confirmDelete),
         content: Text(
-            'Delete "${resource.name}"? All related transactions will also be removed.'),
+            '${l10n.deleteConfirmMsg}\n"${resource.name}"'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -424,7 +427,7 @@ class _ResourceRow extends StatelessWidget {
               provider.deleteResource(resource.id);
               Navigator.pop(context);
             },
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -462,8 +465,11 @@ class _FilterChip extends StatelessWidget {
                   : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color:
-                selected ? c : isDark ? AppColors.borderDark : AppColors.borderLight,
+            color: selected
+                ? c
+                : isDark
+                    ? AppColors.borderDark
+                    : AppColors.borderLight,
           ),
         ),
         child: Text(
@@ -528,9 +534,10 @@ class _ResourceDialogState extends State<_ResourceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     final isEdit = widget.resource != null;
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Resource' : 'Add Resource'),
+      title: Text(isEdit ? l10n.editResource : l10n.newResource),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -541,16 +548,16 @@ class _ResourceDialogState extends State<_ResourceDialog> {
               children: [
                 TextFormField(
                   controller: _name,
-                  decoration:
-                      const InputDecoration(labelText: 'Name *'),
+                  decoration: InputDecoration(
+                      labelText: '${l10n.resourceNameLabel} *'),
                   validator: (v) =>
-                      v!.isEmpty ? 'Name is required' : null,
+                      v!.isEmpty ? l10n.nameRequired : null,
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<ResourceType>(
                   value: _type,
-                  decoration:
-                      const InputDecoration(labelText: 'Type'),
+                  decoration: InputDecoration(
+                      labelText: l10n.resourceTypeLabel),
                   items: ResourceType.values
                       .map((t) => DropdownMenuItem(
                           value: t, child: Text(t.label)))
@@ -564,12 +571,13 @@ class _ResourceDialogState extends State<_ResourceDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _qty,
-                        decoration: const InputDecoration(
-                            labelText: 'Current Qty *'),
+                        decoration: InputDecoration(
+                            labelText:
+                                '${l10n.currentQuantityLabel} *'),
                         keyboardType: TextInputType.number,
                         validator: (v) =>
                             double.tryParse(v!) == null
-                                ? 'Invalid'
+                                ? '!'
                                 : null,
                       ),
                     ),
@@ -577,10 +585,10 @@ class _ResourceDialogState extends State<_ResourceDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _unit,
-                        decoration: const InputDecoration(
-                            labelText: 'Unit *'),
+                        decoration: InputDecoration(
+                            labelText: '${l10n.unitLabel} *'),
                         validator: (v) =>
-                            v!.isEmpty ? 'Required' : null,
+                            v!.isEmpty ? '!' : null,
                       ),
                     ),
                   ],
@@ -591,12 +599,13 @@ class _ResourceDialogState extends State<_ResourceDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _min,
-                        decoration: const InputDecoration(
-                            labelText: 'Min Threshold *'),
+                        decoration: InputDecoration(
+                            labelText:
+                                '${l10n.minThresholdLabel} *'),
                         keyboardType: TextInputType.number,
                         validator: (v) =>
                             double.tryParse(v!) == null
-                                ? 'Invalid'
+                                ? '!'
                                 : null,
                       ),
                     ),
@@ -604,8 +613,8 @@ class _ResourceDialogState extends State<_ResourceDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _rate,
-                        decoration: const InputDecoration(
-                            labelText: 'Daily Rate'),
+                        decoration: InputDecoration(
+                            labelText: l10n.dailyRateLabel),
                         keyboardType: TextInputType.number,
                       ),
                     ),
@@ -619,11 +628,11 @@ class _ResourceDialogState extends State<_ResourceDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         ElevatedButton(
           onPressed: _save,
-          child: Text(isEdit ? 'Save' : 'Add'),
+          child: Text(isEdit ? l10n.save : l10n.addResource),
         ),
       ],
     );
@@ -679,8 +688,9 @@ class _QuickTransactionDialogState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     return AlertDialog(
-      title: Text('Transaction: ${widget.resource.name}'),
+      title: Text('${l10n.addTransaction}: ${widget.resource.name}'),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -703,7 +713,7 @@ class _QuickTransactionDialogState
                     controller: _qtyCtrl,
                     decoration: InputDecoration(
                       labelText:
-                          'Quantity (${widget.resource.unit})',
+                          '${l10n.quantityLabel} (${widget.resource.unit})',
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -712,8 +722,8 @@ class _QuickTransactionDialogState
                 Expanded(
                   child: TextField(
                     controller: _priceCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Price'),
+                    decoration: InputDecoration(
+                        labelText: l10n.priceLabel),
                     keyboardType: TextInputType.number,
                   ),
                 ),
@@ -723,7 +733,7 @@ class _QuickTransactionDialogState
             TextField(
               controller: _noteCtrl,
               decoration:
-                  const InputDecoration(labelText: 'Note (optional)'),
+                  InputDecoration(labelText: l10n.notesLabel),
             ),
           ],
         ),
@@ -731,8 +741,10 @@ class _QuickTransactionDialogState
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
-        ElevatedButton(onPressed: _save, child: const Text('Add')),
+            child: Text(l10n.cancel)),
+        ElevatedButton(
+            onPressed: _save,
+            child: Text(l10n.addTransaction)),
       ],
     );
   }
