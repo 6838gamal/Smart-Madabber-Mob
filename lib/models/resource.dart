@@ -11,7 +11,7 @@ enum ResourceType {
   String get label {
     switch (this) {
       case consumable:
-        return 'Consumable';
+        return 'Inventory Item';
       case rawMaterial:
         return 'Raw Material';
       case product:
@@ -22,6 +22,23 @@ enum ResourceType {
         return 'Ingredient';
       case other:
         return 'Other';
+    }
+  }
+
+  String get labelAr {
+    switch (this) {
+      case consumable:
+        return 'صنف مخزني';
+      case rawMaterial:
+        return 'مادة خام';
+      case product:
+        return 'منتج';
+      case asset:
+        return 'أصل ثابت';
+      case ingredient:
+        return 'مكوّن';
+      case other:
+        return 'أخرى';
     }
   }
 }
@@ -35,13 +52,26 @@ enum ResourceStatus {
   String get label {
     switch (this) {
       case normal:
-        return 'Normal';
+        return 'In Stock';
       case low:
-        return 'Low Stock';
+        return 'Low Stock Alert';
       case critical:
-        return 'Critical';
+        return 'Critical Stock';
       case inactive:
         return 'Inactive';
+    }
+  }
+
+  String get labelAr {
+    switch (this) {
+      case normal:
+        return 'متوفر';
+      case low:
+        return 'تنبيه مخزون منخفض';
+      case critical:
+        return 'مخزون حرج';
+      case inactive:
+        return 'غير نشط';
     }
   }
 }

@@ -1,0 +1,140 @@
+ACCOUNTING TERMINOLOGY UPDATE
+
+The system must use professional accounting and inventory terminology instead of generic names.
+
+Replace simplified labels with business-oriented terminology suitable for homes and small businesses.
+
+TERMINOLOGY STRUCTURE
+
+Dashboard
+→ لوحة التحكم
+
+Resources
+→ Inventory / المخزون
+
+Transactions
+→ Financial & Inventory Transactions / الحركات المالية والمخزنية
+
+Insights
+→ Smart Decisions / القرارات الذكية
+
+Reports
+→ التقارير
+
+Settings
+→ الإعدادات
+
+Profile
+→ الملف الشخصي
+
+Contact Us
+→ تواصل معنا
+
+LOGICAL BUSINESS MODULES
+
+INVENTORY MODULE
+
+Use proper inventory terminology:
+
+* Inventory Items
+* Stock Quantity
+* Minimum Stock
+* Stock Movement
+* Stock Adjustment
+* Low Stock Alert
+
+FINANCIAL MODULE
+
+Use accounting-related terminology:
+
+* Expenses / المصروفات
+* Purchases / المشتريات
+* Sales / المبيعات
+* Revenue / الإيرادات
+* Cost / التكلفة
+* Profit Estimation / تقدير الربح
+
+INVOICE SYSTEM
+
+Add invoice terminology and structure:
+
+Purchase Invoice
+→ فاتورة شراء
+
+Sales Invoice
+→ فاتورة بيع
+
+Invoice Fields:
+
+* Invoice Number
+* Customer/Supplier
+* Date
+* Items
+* Quantity
+* Unit Price
+* Total
+* Notes
+
+EXPENSES MODULE
+
+Dedicated expenses section including:
+
+* Expense Category
+* Amount
+* Payment Method
+* Expense Date
+* Notes
+
+Example categories:
+
+* Food
+* Transport
+* Electricity
+* Rent
+* Supplies
+
+STOCK MOVEMENT TERMINOLOGY
+
+Instead of generic “transactions”, classify movements as:
+
+* Purchase Entry
+* Sales Exit
+* Consumption
+* Stock Adjustment
+* Returned Items
+
+REPORTING TERMINOLOGY
+
+Use business-style reporting names:
+
+* Daily Report
+* Inventory Report
+* Expense Report
+* Consumption Analysis
+* Profit/Loss Summary
+* Waste Analysis
+
+SMART DECISION TERMINOLOGY
+
+The decision engine should generate business-friendly insights such as:
+
+* “Inventory level is below minimum threshold”
+* “High expense detected in category X”
+* “Low sales activity for item Y”
+* “Possible waste detected”
+
+UI LABELING RULES
+
+* Use clear accounting terminology
+* Avoid technical developer wording
+* Keep labels understandable for normal users
+* Maintain bilingual terminology consistency in Arabic and English
+
+SYSTEM GOAL UPDATE
+
+The app should feel like:
+
+* A smart operational assistant
+* A lightweight accounting + inventory advisor
+* A decision-making tool
+* NOT a complex ERP system

@@ -8,30 +8,30 @@ enum RuleConditionType {
   String get label {
     switch (this) {
       case lowStock:
-        return 'Low Stock';
+        return 'Low Stock Alert';
       case highConsumption:
         return 'High Consumption';
       case inactiveResource:
-        return 'Inactive Resource';
+        return 'Inactive Item';
       case wasteDetection:
-        return 'Waste Detection';
+        return 'Waste Analysis';
       case criticalLevel:
-        return 'Critical Level';
+        return 'Critical Stock Level';
     }
   }
 
   String get description {
     switch (this) {
       case lowStock:
-        return 'Alert when quantity falls below minimum threshold';
+        return 'Alert when stock quantity falls below minimum threshold';
       case highConsumption:
         return 'Alert when daily consumption rate is unusually high';
       case inactiveResource:
-        return 'Alert when a resource has had no activity for too long';
+        return 'Alert when an inventory item has had no stock movement for too long';
       case wasteDetection:
-        return 'Detect potential waste from excessive consumption';
+        return 'Detect possible waste from high consumption with no restocking';
       case criticalLevel:
-        return 'Alert when quantity is critically low (below 50% of threshold)';
+        return 'Alert when stock is critically low — below 50% of minimum threshold';
     }
   }
 }

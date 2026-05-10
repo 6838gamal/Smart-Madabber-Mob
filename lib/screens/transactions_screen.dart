@@ -106,7 +106,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ...TransactionType.values.map((t) => Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: _Chip(
-                          label: '${t.emoji} ${t.label}',
+                          label: '${t.emoji} ${l10n.isAr ? t.labelAr : t.label}',
                           selected: _filterType == t,
                           onTap: () =>
                               setState(() => _filterType = t)),
@@ -212,7 +212,7 @@ class _TxnRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${txn.type.label} · ${txn.quantity.toStringAsFixed(1)} ${resource?.unit ?? ''}${txn.note.isNotEmpty ? ' · ${txn.note}' : ''}',
+                  '${l10n.isAr ? txn.type.labelAr : txn.type.label} · ${txn.quantity.toStringAsFixed(1)} ${resource?.unit ?? ''}${txn.note.isNotEmpty ? ' · ${txn.note}' : ''}',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
@@ -359,8 +359,10 @@ class _AddTransactionDialogState extends State<_AddTransactionDialog> {
             const SizedBox(height: 12),
             SegmentedButton<TransactionType>(
               segments: TransactionType.values
-                  .map((t) =>
-                      ButtonSegment(value: t, label: Text(t.label)))
+                  .map((t) => ButtonSegment(
+                      value: t,
+                      label: Text(
+                          context.read<AppProvider>().isArabic ? t.labelAr : t.label)))
                   .toList(),
               selected: {_type},
               onSelectionChanged: (v) =>

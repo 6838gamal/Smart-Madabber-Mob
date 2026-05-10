@@ -311,8 +311,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     ];
 
     final barLabels = l10n.isAr
-        ? ['مشتريات', 'استهلاك', 'مبيعات']
-        : ['Purchases', 'Consumed', 'Sales'];
+        ? ['فاتورة شراء', 'استهلاك', 'فاتورة بيع']
+        : ['Purchase Entry', 'Consumption', 'Sales Exit'];
 
     return _Card(
       isDark: isDark,

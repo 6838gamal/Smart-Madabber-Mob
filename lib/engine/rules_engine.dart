@@ -32,9 +32,9 @@ class RulesEngine {
                 resourceName: resource.name,
                 type: RuleConditionType.lowStock,
                 message:
-                    '${resource.name} is running low — ${resource.currentQuantity.toStringAsFixed(1)} ${resource.unit} remaining (min: ${resource.minThreshold} ${resource.unit})',
+                    'Inventory level is below minimum threshold — ${resource.name}: ${resource.currentQuantity.toStringAsFixed(1)} ${resource.unit} remaining (minimum stock: ${resource.minThreshold} ${resource.unit})',
                 decision:
-                    'Restock ${resource.name} soon. You have approximately ${resource.daysRemaining.isFinite ? resource.daysRemaining.toStringAsFixed(0) : "∞"} days of supply left.',
+                    'Restock ${resource.name} soon. Approximately ${resource.daysRemaining.isFinite ? resource.daysRemaining.toStringAsFixed(0) : "∞"} days of supply remaining. Consider issuing a purchase invoice.',
                 priority: 2,
                 createdAt: now,
                 severity: rule.severity,
@@ -50,9 +50,9 @@ class RulesEngine {
                 resourceName: resource.name,
                 type: RuleConditionType.criticalLevel,
                 message:
-                    '🚨 CRITICAL: ${resource.name} is at ${resource.currentQuantity.toStringAsFixed(1)} ${resource.unit} — below critical threshold!',
+                    '🚨 CRITICAL: ${resource.name} is at ${resource.currentQuantity.toStringAsFixed(1)} ${resource.unit} — below critical stock threshold!',
                 decision:
-                    'Immediately restock ${resource.name}. Current level is dangerously low.',
+                    'Immediately restock ${resource.name}. Current stock level is dangerously low. Issue a purchase invoice as soon as possible.',
                 priority: 5,
                 createdAt: now,
                 severity: RuleSeverity.critical,
@@ -78,9 +78,9 @@ class RulesEngine {
                   resourceName: resource.name,
                   type: RuleConditionType.highConsumption,
                   message:
-                      '${resource.name} consumption is ${((avgDaily / resource.dailyConsumptionRate - 1) * 100).toStringAsFixed(0)}% above normal this week',
+                      'High expense detected — ${resource.name} consumption is ${((avgDaily / resource.dailyConsumptionRate - 1) * 100).toStringAsFixed(0)}% above normal this week',
                   decision:
-                      'Review ${resource.name} usage. Consider setting stricter consumption limits or investigating the cause of increased usage.',
+                      'Review ${resource.name} consumption patterns. Consider setting stricter usage limits or investigating the cause of increased consumption to reduce costs.',
                   priority: 3,
                   createdAt: now,
                   severity: rule.severity,
@@ -100,9 +100,9 @@ class RulesEngine {
                 resourceName: resource.name,
                 type: RuleConditionType.inactiveResource,
                 message:
-                    '${resource.name} has had no activity for $daysSince days',
+                    'Low sales activity for ${resource.name} — no stock movement recorded for $daysSince days',
                 decision:
-                    'Review ${resource.name}. Consider whether this resource is still needed or if it should be removed/repurposed.',
+                    'Review ${resource.name}. Consider whether this inventory item is still needed, or if it should be written off or repurposed.',
                 priority: 1,
                 createdAt: now,
                 severity: rule.severity,
@@ -131,9 +131,9 @@ class RulesEngine {
                   resourceName: resource.name,
                   type: RuleConditionType.wasteDetection,
                   message:
-                      'Potential waste detected for ${resource.name} — high consumption with no restocking in 14 days',
+                      'Possible waste detected for ${resource.name} — high consumption with no purchase entry in 14 days',
                   decision:
-                      'Audit ${resource.name} usage patterns. Consider purchasing in smaller quantities to avoid waste.',
+                      'Audit ${resource.name} usage patterns. Consider purchasing in smaller quantities to avoid waste and reduce expenses.',
                   priority: 2,
                   createdAt: now,
                   severity: rule.severity,

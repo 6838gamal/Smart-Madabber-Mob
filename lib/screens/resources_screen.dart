@@ -227,7 +227,7 @@ class _ResourceRow extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${resource.type.label} · ${resource.unit}',
+                      '${l10n.isAr ? resource.type.labelAr : resource.type.label} · ${resource.unit}',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
@@ -246,7 +246,7 @@ class _ResourceRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  resource.status.label,
+                  l10n.isAr ? resource.status.labelAr : resource.status.label,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -560,7 +560,7 @@ class _ResourceDialogState extends State<_ResourceDialog> {
                       labelText: l10n.resourceTypeLabel),
                   items: ResourceType.values
                       .map((t) => DropdownMenuItem(
-                          value: t, child: Text(t.label)))
+                          value: t, child: Text(l10n.isAr ? t.labelAr : t.label)))
                       .toList(),
                   onChanged: (v) =>
                       setState(() => _type = v!),

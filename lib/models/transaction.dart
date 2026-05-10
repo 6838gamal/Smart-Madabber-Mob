@@ -7,13 +7,26 @@ enum TransactionType {
   String get label {
     switch (this) {
       case purchase:
-        return 'Purchase';
+        return 'Purchase Entry';
       case consume:
-        return 'Consume';
+        return 'Consumption';
       case sale:
-        return 'Sale';
+        return 'Sales Exit';
       case adjustment:
-        return 'Adjustment';
+        return 'Stock Adjustment';
+    }
+  }
+
+  String get labelAr {
+    switch (this) {
+      case purchase:
+        return 'فاتورة شراء';
+      case consume:
+        return 'استهلاك';
+      case sale:
+        return 'فاتورة بيع';
+      case adjustment:
+        return 'تسوية مخزون';
     }
   }
 
