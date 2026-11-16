@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/app_provider.dart';
+import '../l10n/app_localizations.dart';   // ✅ الاستيراد الناقص
 import '../theme/app_theme.dart';
 import '../models/sidebar_node.dart';
 import 'dashboard_screen.dart';
@@ -12,7 +14,7 @@ import 'settings_screen.dart';
 import 'help_screen.dart';
 import 'add_entry_screen.dart';
 import 'ai_assistant_screen.dart';
-import 'drawer_screen.dart'; // ← جديد
+import 'drawer_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -27,7 +29,7 @@ class HomeScreen extends StatelessWidget {
       return Scaffold(
         body: Row(
           children: [
-            const AppSidebar(), // ← استُبدل SidebarWidget + الشجرة
+            const AppSidebar(),
             Expanded(child: _buildContent(provider.currentScreen)),
           ],
         ),
@@ -37,7 +39,7 @@ class HomeScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      drawer: const AppDrawer(), // ← استُبدل _buildDrawer
+      drawer: const AppDrawer(),
       body: _buildContent(provider.currentScreen),
       bottomNavigationBar: _BottomNav(provider: provider),
       floatingActionButton: _buildFabColumn(context),
@@ -109,7 +111,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = L10n.of(context);
+    final l10n = L10n.of(context);   // ✅ يعمل الآن بعد إضافة الاستيراد
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BottomAppBar(
