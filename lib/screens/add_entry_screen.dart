@@ -1,61 +1,92 @@
-import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+// lib/screens/add_entry_screen.dart  (مقتطف أساسي)
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
-/// شاشة إضافة قيد — سيتم تجهيز تفاصيلها لاحقاً
-class AddEntryScreen extends StatelessWidget {
-  const AddEntryScreen({super.key});
+// داخل State:
+final _importService = EntryImportService();
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+Future<void> _pickAndAnalyzeImage() async {
+  final picker = ImagePicker();
+  final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+  if (file == null) return;
+  await _runImport(() => _importService.analyzeImage(File(file.path)));
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('إضافة قيد'),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.add_circle_outline_rounded,
-                  size: 52,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'إضافة قيد جديد',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'سيتم تجهيز هذه الشاشة قريباً\nلإضافة القيود والتفاصيل المحاسبية.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.6,
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                ),
-              ),
-            ],
-          ),
-        ),
+Future<void> _pickCsvOrXlsx() async {
+  final res = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['csv', 'xlsx', 'xls'],
+  );
+  if (res == null || res.files.isEmpty) return;
+  await _runImport(() => _importService.importFile(res.files.single));
+}
+
+Future<void> _runImport(Future<ImportResultModel> Function() task) async {
+  // مؤشر تحميل
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+  try {
+    final result = await task();
+    if (!mounted) return;
+    Navigator.of(context).pop(); // إغلاق اللودر
+
+    if (result.lines.isEmpty) {
+      _showError('لم يتم استخراج أي أسطر — جرّب ملفاً آخر');
+      return;
+    }
+
+    // فتح شاشة المراجعة
+    final approved = await Navigator.of(context).push<ImportResultModel>(
+      MaterialPageRoute(
+        builder: (_) => ImportReviewScreen(result: result),
       ),
     );
+
+    if (approved == null) {
+      _showError('تم إلغاء الاستيراد');
+      return;
+    }
+
+    _applyImportedResult(approved);
+  } catch (e) {
+    if (mounted) Navigator.of(context).pop();
+    _showError('فشل التحليل: $e');
   }
+}
+
+void _applyImportedResult(ImportResultModel approved) {
+  setState(() {
+    // إفراغ الأسطر الحالية
+    for (final l in _lines) {
+      l.dispose();
+    }
+    _lines.clear();
+
+    for (final m in approved.lines) {
+      final l = _EntryLine();
+      l.accountController.text = m.account ?? '';
+      l.descriptionController.text = m.description ?? '';
+      l.debitController.text = m.debit > 0 ? m.debit.toStringAsFixed(2) : '';
+      l.creditController.text = m.credit > 0 ? m.credit.toStringAsFixed(2) : '';
+      _lines.add(l);
+    }
+
+    if (approved.reference != null) {
+      _referenceController.text = approved.reference!;
+    }
+    if (approved.date != null) {
+      _selectedDate = approved.date!;
+    }
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('تم استيراد ${approved.lines.length} سطر — راجع ثم احفظ'),
+      backgroundColor: Colors.green,
+    ),
+  );
 }
