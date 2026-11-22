@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
-import '../l10n/app_localizations.dart';   // ✅ الاستيراد الناقص
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../models/sidebar_node.dart';
 import 'dashboard_screen.dart';
@@ -40,11 +40,71 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       drawer: const AppDrawer(),
+
+      // ✅ زر القائمة في مكانه الطبيعي أعلى الشاشة + زر المساعد الذكي يميناً
+      appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            tooltip: 'القائمة',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        title: Text(_screenTitle(provider.currentScreen)),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome_rounded),
+            tooltip: 'المساعد الذكي',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+
       body: _buildContent(provider.currentScreen),
       bottomNavigationBar: _BottomNav(provider: provider),
-      floatingActionButton: _buildFabColumn(context),
+
+      // ✅ زر الإضافة جزء من القائمة السفلية عبر الفتحة (notch)
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'add_fab',
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        tooltip: 'إضافة قيد',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddEntryScreen()),
+          );
+        },
+        child: const Icon(Icons.add, size: 28),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
+  }
+
+  /// عنوان الشاشة الحالية لعرضه في الـ AppBar
+  String _screenTitle(AppScreen screen) {
+    switch (screen) {
+      case AppScreen.dashboard:
+        return 'الرئيسية';
+      case AppScreen.resources:
+        return 'الموارد';
+      case AppScreen.transactions:
+        return 'المعاملات';
+      case AppScreen.insights:
+        return 'الرؤى';
+      case AppScreen.reports:
+        return 'التقارير';
+      case AppScreen.settings:
+        return 'الإعدادات';
+      case AppScreen.help:
+        return 'المساعدة';
+    }
   }
 
   // ---------------- محتوى الشاشات ----------------
@@ -67,7 +127,8 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
-  /// عمود الأزرار العائمة: زر الإضافة (الرئيسي) + زر الذكاء الاصطناعي فوقه
+  /// على الشاشات العريضة فقط: عمود الأزرار العائمة على يمين الشاشة
+  /// (زر الإضافة + زر المساعد الذكي فوقه)
   Widget _buildFabColumn(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -87,7 +148,7 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         FloatingActionButton(
-          heroTag: 'add_fab',
+          heroTag: 'add_fab_wide',
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           tooltip: 'إضافة قيد',
@@ -111,13 +172,16 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = L10n.of(context);   // ✅ يعمل الآن بعد إضافة الاستيراد
+    final l10n = L10n.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BottomAppBar(
       color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+
+      // ✅ الفتحة ضرورية لظهور زر الإضافة كجزء من الشريط
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
+
       child: SizedBox(
         height: 60,
         child: Row(
@@ -131,12 +195,15 @@ class _BottomNav extends StatelessWidget {
             ),
             _navItem(
               context,
-              icon: Icons.menu_rounded,
-              label: 'القائمة',
-              selected: false,
-              onTap: () => Scaffold.of(context).openDrawer(),
+              icon: Icons.receipt_long_rounded,
+              label: 'المعاملات',
+              selected: provider.currentScreen == AppScreen.transactions,
+              onTap: () => provider.navigateTo(AppScreen.transactions),
             ),
+
+            // ✅ فراغ في المنتصف للفتحة (عرض ≈ قطر الزر + notchMargin*2)
             const SizedBox(width: 72),
+
             _navItem(
               context,
               icon: Icons.inventory_2_rounded,
