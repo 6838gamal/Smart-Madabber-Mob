@@ -35,16 +35,16 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
     super.dispose();
   }
 
-  double get _debit => _lines.fold(0, (s, l) => s + l.debit);
-  double get _credit => _lines.fold(0, (s, l) => s + l.credit);
+  // ✅ استخدمنا debitVal / creditVal (double) وليس debit / credit (controller)
+  double get _debit => _lines.fold(0.0, (s, l) => s + l.debitVal);
+  double get _credit => _lines.fold(0.0, (s, l) => s + l.creditVal);
   bool get _balanced => (_debit - _credit).abs() < 0.001 && _debit > 0;
 
   void _accept() {
     final cleaned = _lines
         .map((l) => l.toModel())
-        .where((l) => l.account?.isNotEmpty == true ||
-            l.debit > 0 ||
-            l.credit > 0)
+        .where((l) =>
+            l.account?.isNotEmpty == true || l.debit > 0 || l.credit > 0)
         .toList();
     if (cleaned.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +88,6 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // تحذيرات
           if (widget.result.warnings.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -108,15 +107,15 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
                               const Icon(Icons.warning_amber_rounded,
                                   size: 16, color: Colors.orange),
                               const SizedBox(width: 6),
-                              Expanded(child: Text(w, style: const TextStyle(fontSize: 12))),
+                              Expanded(
+                                  child: Text(w,
+                                      style: const TextStyle(fontSize: 12))),
                             ],
                           ),
                         ))
                     .toList(),
               ),
             ),
-
-          // النص الخام (لو صورة)
           if (widget.result.rawText != null)
             ExpansionTile(
               title: const Text('النص المستخرج من الصورة'),
@@ -124,17 +123,17 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
-                  color: isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
+                  color:
+                      isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
                   child: Text(
                     widget.result.rawText!,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    style: const TextStyle(
+                        fontFamily: 'monospace', fontSize: 12),
                   ),
                 ),
               ],
             ),
-
           const SizedBox(height: 8),
-          // المرجع
           TextField(
             controller: _refCtrl,
             decoration: const InputDecoration(
@@ -142,7 +141,6 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
               prefixIcon: Icon(Icons.tag),
             ),
           ),
-
           const SizedBox(height: 16),
           Row(
             children: [
@@ -152,26 +150,23 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               const Spacer(),
               TextButton.icon(
-                onPressed: () =>
-                    setState(() => _lines.add(_EditLine.empty())),
+                onPressed: () => setState(() => _lines.add(_EditLine.empty())),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('سطر'),
               ),
             ],
           ),
-
           ..._lines.asMap().entries.map((e) => _lineCard(e.key, e.value, isDark)),
-
           const SizedBox(height: 12),
-
-          // ملخص التوازن
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: (_balanced ? Colors.green : Colors.orange).withOpacity(0.08),
+              color: (_balanced ? Colors.green : Colors.orange)
+                  .withOpacity(0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: (_balanced ? Colors.green : Colors.orange).withOpacity(0.4),
+                color: (_balanced ? Colors.green : Colors.orange)
+                    .withOpacity(0.4),
               ),
             ),
             child: Column(
@@ -246,7 +241,9 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
+        color: isDark
+            ? Colors.white.withOpacity(0.03)
+            : Colors.black.withOpacity(0.02),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
       ),
@@ -258,12 +255,14 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
                 radius: 10,
                 backgroundColor: AppColors.primary.withOpacity(0.15),
                 child: Text('${i + 1}',
-                    style: const TextStyle(fontSize: 10, color: AppColors.primary)),
+                    style: const TextStyle(
+                        fontSize: 10, color: AppColors.primary)),
               ),
               const Spacer(),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                icon: const Icon(Icons.delete_outline,
+                    color: Colors.red, size: 18),
                 onPressed: () {
                   setState(() {
                     _lines[i].dispose();
@@ -294,7 +293,8 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
               Expanded(
                 child: TextField(
                   controller: l.debit,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: 'مدين',
                     isDense: true,
@@ -306,7 +306,8 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
               Expanded(
                 child: TextField(
                   controller: l.credit,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: 'دائن',
                     isDense: true,
@@ -322,6 +323,7 @@ class _ImportReviewScreenState extends State<ImportReviewScreen> {
   }
 }
 
+/// ✅ نسخة نظيفة من _EditLine: فقط الـ getters المطلوبة فعلاً
 class _EditLine {
   final TextEditingController account;
   final TextEditingController description;
@@ -346,36 +348,9 @@ class _EditLine {
             text: m.credit > 0 ? m.credit.toStringAsFixed(2) : ''),
       );
 
+  // ── القيم الرقمية الفعلية (المستخدمة في الحسابات) ──
   double get debitVal => double.tryParse(debit.text) ?? 0;
   double get creditVal => double.tryParse(credit.text) ?? 0;
-
-  double get debitSum => debitVal;
-  double get creditSum => creditVal;
-
-  double get debit_ => debitVal;
-  double get credit_ => creditVal;
-
-  double get debitAmount => debitVal;
-  double get creditAmount => creditVal;
-
-  // أسماء مساعدة للاستخدام في الشاشة
-  double get debitTotal => debitVal;
-  double get creditTotal => creditVal;
-
-  // القيم الفعلية المستخدمة:
-  double get debitValue => debitVal;
-  double get creditValue => creditVal;
-
-  // تماشياً مع الاستخدام السابق في _AddEntryScreenState:
-  // note: يتم استعمال l.debit و l.credit مباشرة، لذلك نوفر getters:
-  // (انظر الأسفل)
-  double get debit$ => debitVal;
-  double get credit$ => creditVal;
-
-  // الشاشة تستعمل _EditLine.debit كـ controller، لذا نوفر alias للـ controllers:
-  // (الكود أعلاه يستخدم l.debit كـ TextEditingController ولذلك لا يمكن
-  //  إعادة تعريفه كـ double. لذلك نستخدم الحقول controllers مباشرة.)
-  // ملاحظة: في هذا النسخة نستخدم l.debitVal و l.creditVal في الحسابات.
 
   EntryLineModel toModel() => EntryLineModel(
         account: account.text.trim().isEmpty ? null : account.text.trim(),
