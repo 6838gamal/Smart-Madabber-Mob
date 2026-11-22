@@ -23,6 +23,12 @@ dependencies:
   excel: ^4.0.3          # لقراءة xlsx
   path_provider: ^2.1.4
 
+  
+  flutter_tts: ^4.2.0
+  record: ^5.1.2
+  audioplayers: ^6.1.0
+  permission_handler: ^11.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
