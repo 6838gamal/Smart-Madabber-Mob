@@ -32,23 +32,3 @@ class EntryLineModel {
       );
 }
 
-// lib/models/import_result_model.dart
-class ImportResultModel {
-  final ImportSource source;
-  final List<EntryLineModel> lines;
-  final String? reference;
-  final DateTime? date;
-  final String? rawText; // لصور OCR
-  final List<String> warnings;
-
-  const ImportResultModel({
-    required this.source,
-    required this.lines,
-    this.reference,
-    this.date,
-    this.rawText,
-    this.warnings = const [],
-  });
-}
-
-enum ImportSource { image, csv, xlsx }
