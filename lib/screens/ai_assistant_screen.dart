@@ -4,7 +4,9 @@ import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -223,10 +225,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Future<void> _startRecording() async {
-    final perm = await Permission.microphone.request();
-    if (!perm.isGranted) {
-      _showError('تم رفض إذن الميكروفون');
-      return;
+    // ✅ تخطي permission_handler على الويب
+    if (!kIsWeb) {
+      final perm = await Permission.microphone.request();
+      if (!perm.isGranted) {
+        _showError('تم رفض إذن الميكروفون');
+        return;
+      }
     }
     if (!await _recorder.hasPermission()) {
       _showError('لا يوجد إذن للتسجيل');
@@ -531,7 +536,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               const SizedBox(width: 8),
               Text(
                 _formatDuration(_recordDuration),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               FilledButton.icon(
