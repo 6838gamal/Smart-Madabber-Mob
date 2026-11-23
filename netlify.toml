@@ -1,9 +1,16 @@
 [build]
-  command= "flutter clean; flutter pub get;flutter build web"
+  command = "flutter build web --release --pwa-strategy=none"
   base    = "."
   publish = "build/web"
 
 [[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
