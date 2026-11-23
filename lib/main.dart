@@ -23,7 +23,7 @@ class SmartAdvisorApp extends StatelessWidget {
     final isAr = provider.language == 'ar';
 
     return MaterialApp(
-      title: 'المدبّر الذكي — Smart Advisor',
+      title: 'المدبّر الذكي —   Smart Advisor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
