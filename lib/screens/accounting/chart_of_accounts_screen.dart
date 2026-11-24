@@ -631,22 +631,22 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
 
     final existing = widget.existing;
     final account = existing != null
-        ? existing.copyWith(
-            code: code,
-            name: name,
-            type: _type,
-            parentId: _parentId,
-            clearParent: _parentId == null,
-            isActive: _isActive,
-          )
-        : Account(
-            id: 'acc_${DateTime.now().microsecondsSinceEpoch}',
-            code: code,
-            name: name,
-            type: _type,
-            parentId: _parentId,
-            isActive: _isActive,
-          );
+    ? Account(
+        id: existing.id,
+        code: code,
+        name: name,
+        type: _type,
+        parentId: _parentId,
+        isActive: _isActive,
+      )
+    : Account(
+        id: 'acc_${DateTime.now().microsecondsSinceEpoch}',
+        code: code,
+        name: name,
+        type: _type,
+        parentId: _parentId,
+        isActive: _isActive,
+      );
 
     Navigator.pop(context, account);
   }
