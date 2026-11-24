@@ -4,19 +4,18 @@ import '../models/resource.dart';
 import '../models/transaction.dart';
 import '../models/rule.dart';
 import '../models/insight.dart';
+import '../models/account.dart';
+import '../models/journal_entry.dart';
 import '../services/storage_service.dart';
 import '../engine/rules_engine.dart';
 import '../engine/seed_data.dart';
+import '../engine/seed_accounts.dart';
 
 const _uuid = Uuid();
 
 /// ---------------------------------------------------------------
 /// الشاشات المتاحة في التطبيق
 /// ---------------------------------------------------------------
-/// عند إضافة شاشة جديدة:
-/// 1. أضف القيمة هنا.
-/// 2. أضف الحالة في `screen_router.dart`.
-/// 3. اربطها بـ `screen: AppScreen.xxx` في `buildSidebarTree`.
 enum AppScreen {
   // ── أساسية ─────────────────────────────────────────────────
   dashboard,
@@ -85,14 +84,12 @@ class AppProvider extends ChangeNotifier {
   List<Transaction> _transactions = [];
   List<Rule> _rules = [];
   List<Insight> _insights = [];
+  List<Account> _accounts = [];
+  List<JournalEntry> _journalEntries = [];
 
   // ── التنقل ─────────────────────────────────────────────────
   AppScreen _currentScreen = AppScreen.dashboard;
-
-  /// سجل التنقل — يسمح بالرجوع للشاشة السابقة
   final List<AppScreen> _navigationStack = [AppScreen.dashboard];
-
-  /// وسائط اختيارية تُمرَّر للشاشة (مثل id عنصر لفتحه)
   Map<String, dynamic> _screenArgs = {};
 
   bool _isDarkMode = false;
@@ -105,11 +102,11 @@ class AppProvider extends ChangeNotifier {
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   List<Rule> get rules => List.unmodifiable(_rules);
   List<Insight> get insights => List.unmodifiable(_insights);
+  List<Account> get accounts => List.unmodifiable(_accounts);
+  List<JournalEntry> get journalEntries => List.unmodifiable(_journalEntries);
 
   AppScreen get currentScreen => _currentScreen;
   Map<String, dynamic> get screenArgs => Map.unmodifiable(_screenArgs);
-
-  /// هل يمكن الرجوع للخلف؟
   bool get canGoBack => _navigationStack.length > 1;
 
   bool get isDarkMode => _isDarkMode;
@@ -172,6 +169,12 @@ class AppProvider extends ChangeNotifier {
       _insights = await _storage.loadInsights();
     }
 
+    // ── تحميل الحسابات والقيود (مؤقتاً من seed) ───────────
+    if (_accounts.isEmpty) {
+      _accounts = seedAccounts;
+      _journalEntries = buildSeedJournalEntries();
+    }
+
     final settings = await _storage.loadSettings();
     _isDarkMode = settings['darkMode'] as bool? ?? false;
     _currency = settings['currency'] as String? ?? 'YER_NEW';
@@ -220,21 +223,14 @@ class AppProvider extends ChangeNotifier {
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
-
-  /// الانتقال إلى شاشة مع تمرير وسائط اختيارية.
-  ///
-  /// - إذا كانت الشاشة هي الحالية بالفعل ولم تُمرَّر وسائط، لا يفعل شيئاً.
-  /// - يدفع الشاشة إلى الـ stack للسماح بالرجوع.
   void navigateTo(AppScreen screen, {Map<String, dynamic>? args}) {
     if (screen == _currentScreen && args == null) return;
-
     _navigationStack.add(screen);
     _currentScreen = screen;
     _screenArgs = args ?? {};
     notifyListeners();
   }
 
-  /// الرجوع للشاشة السابقة. يعيد `false` إن لم يوجد سجل.
   bool goBack() {
     if (_navigationStack.length <= 1) return false;
     _navigationStack.removeLast();
@@ -244,8 +240,6 @@ class AppProvider extends ChangeNotifier {
     return true;
   }
 
-  /// استبدال الشاشة الحالية دون إضافة سجل جديد.
-  /// مفيد بعد حفظ نموذج (مثلاً: من "قيد جديد" إلى "قائمة القيود").
   void replaceWith(AppScreen screen, {Map<String, dynamic>? args}) {
     if (_navigationStack.isNotEmpty) {
       _navigationStack[_navigationStack.length - 1] = screen;
@@ -257,7 +251,6 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// تفريغ السجل والعودة للوحة التحكم.
   void resetNavigation() {
     _navigationStack
       ..clear()
@@ -441,4 +434,157 @@ class AppProvider extends ChangeNotifier {
 
   String newResourceId() => _uuid.v4();
   String newTransactionId() => _uuid.v4();
+  String newJournalEntryId() => _uuid.v4();
+
+  // ── Accounts ──────────────────────────────────────────────────────────────
+  Account? accountById(String id) {
+    try {
+      return _accounts.firstWhere((a) => a.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// الحسابات الورقية فقط (ليس لها أبناء) — هي القابلة للترحيل
+  List<Account> get leafAccounts {
+    final parentIds = _accounts
+        .where((a) => a.parentId != null)
+        .map((a) => a.parentId!)
+        .toSet();
+    return _accounts
+        .where((a) => !parentIds.contains(a.id))
+        .toList()
+      ..sort((a, b) => a.code.compareTo(b.code));
+  }
+
+  List<Account> get sortedLeafAccounts => leafAccounts;
+
+  List<Account> get sortedAccounts =>
+      List<Account>.from(_accounts)..sort((a, b) => a.code.compareTo(b.code));
+
+  /// كل الحسابات من نوع معيّن
+  List<Account> accountsByType(AccountType type) =>
+      _accounts.where((a) => a.type == type).toList()
+        ..sort((a, b) => a.code.compareTo(b.code));
+
+  // ── Journal Entries / Ledger ──────────────────────────────────────────────
+
+  /// حركات حساب معيّن ضمن فترة (مع الرصيد الافتتاحي محسوباً مسبقاً)
+  List<LedgerMovement> movementsForAccount(
+    String accountId, {
+    DateTime? from,
+    DateTime? to,
+  }) {
+    final result = <LedgerMovement>[];
+    for (final entry in _journalEntries) {
+      if (from != null && entry.date.isBefore(from)) continue;
+      if (to != null && entry.date.isAfter(to.add(const Duration(days: 1)))) {
+        continue;
+      }
+      for (final line in entry.lines) {
+        if (line.accountId != accountId) continue;
+        result.add(LedgerMovement(
+          entryId: entry.id,
+          reference: entry.reference,
+          date: entry.date,
+          description: line.description ?? entry.description,
+          debit: line.debit,
+          credit: line.credit,
+        ));
+      }
+    }
+    result.sort((a, b) => a.date.compareTo(b.date));
+    return result;
+  }
+
+  /// الرصيد الافتتاحي للحساب (كل ما قبل `from`)
+  double openingBalanceFor(String accountId, {DateTime? from}) {
+    if (from == null) return 0;
+    double total = 0;
+    for (final entry in _journalEntries) {
+      if (!entry.date.isBefore(from)) continue;
+      for (final line in entry.lines) {
+        if (line.accountId != accountId) continue;
+        total += line.debit - line.credit;
+      }
+    }
+    return total;
+  }
+
+  /// رصيد الحساب الحالي (كل القيود حتى الآن)
+  double currentBalanceFor(String accountId) {
+    double total = 0;
+    for (final entry in _journalEntries) {
+      for (final line in entry.lines) {
+        if (line.accountId != accountId) continue;
+        total += line.debit - line.credit;
+      }
+    }
+    return total;
+  }
+
+  /// إضافة قيد جديد (يتحقق من التوازن)
+  Future<void> addJournalEntry(JournalEntry entry) async {
+    if (!entry.isBalanced) {
+      throw ArgumentError('القيد غير متوازن: مجموع المدين ≠ مجموع الدائن');
+    }
+    _journalEntries = [entry, ..._journalEntries];
+    // await _storage.saveJournalEntries(_journalEntries);
+    notifyListeners();
+  }
+
+  /// حذف قيد
+  Future<void> deleteJournalEntry(String id) async {
+    _journalEntries = _journalEntries.where((e) => e.id != id).toList();
+    // await _storage.saveJournalEntries(_journalEntries);
+    notifyListeners();
+  }
+
+  /// إضافة حساب
+  Future<void> addAccount(Account account) async {
+    _accounts = [..._accounts, account];
+    // await _storage.saveAccounts(_accounts);
+    notifyListeners();
+  }
+
+  /// تحديث حساب
+  Future<void> updateAccount(Account account) async {
+    _accounts = _accounts.map((a) => a.id == account.id ? account : a).toList();
+    // await _storage.saveAccounts(_accounts);
+    notifyListeners();
+  }
+
+  /// حذف حساب (إن لم يكن له حركات)
+  Future<void> deleteAccount(String id) async {
+    final hasMovements = _journalEntries.any(
+      (e) => e.lines.any((l) => l.accountId == id),
+    );
+    if (hasMovements) {
+      throw ArgumentError('لا يمكن حذف حساب له حركات مرتبطة');
+    }
+    _accounts = _accounts.where((a) => a.id != id).toList();
+    // await _storage.saveAccounts(_accounts);
+    notifyListeners();
+  }
+}
+
+// ── LedgerMovement: حركة واحدة في دفتر الأستاذ ──────────────
+class LedgerMovement {
+  final String entryId;
+  final String reference;
+  final DateTime date;
+  final String description;
+  final double debit;
+  final double credit;
+
+  const LedgerMovement({
+    required this.entryId,
+    required this.reference,
+    required this.date,
+    required this.description,
+    required this.debit,
+    required this.credit,
+  });
+
+  double get net => debit - credit;
 }
