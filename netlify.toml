@@ -3,12 +3,14 @@
   base    = "."
   publish = "build/web"
 
+# إعادة التوجيه لـ index.html فقط للمسارات غير الموجودة فعلياً
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
 
-# منع كاش index.html و version.json تماماً
+# ===== منع الكاش عن ملفات التحكم =====
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -24,8 +26,24 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"
 
-# main.dart.js — اسمح بكاش قصير جداً (لأن اسمه ثابت)
 [[headers]]
   for = "/main.dart.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"
+
+# 🔴 الأهم: Service Worker لا يُكاش أبداً
+[[headers]]
+  for = "/flutter_service_worker.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"
+
+# ملفات الأصول (اسمها يحمل hash عادةً، لكن امنع الكاش احتياطاً)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/canvaskit/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
