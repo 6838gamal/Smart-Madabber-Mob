@@ -18,6 +18,7 @@ import 'drawer_screen.dart';
 import 'accounting/general_ledger_screen.dart';
 import 'accounting/chart_of_accounts_screen.dart';
 import 'accounting/journal_entry_new_screen.dart';
+import 'accounting/journal_entries_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -226,7 +227,7 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.journalEntryNew:
         return const JournalEntryNewScreen();
       case AppScreen.journalEntriesList:
-        return const _ComingSoon(title: 'قائمة القيود', icon: Icons.list);
+        return const JournalEntriesListScreen();
       case AppScreen.recurringJournals:
         return const _ComingSoon(title: 'القيود المتكررة', icon: Icons.repeat);
       case AppScreen.generalLedger:
