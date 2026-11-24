@@ -10,7 +10,15 @@ import '../engine/seed_data.dart';
 
 const _uuid = Uuid();
 
+/// ---------------------------------------------------------------
+/// الشاشات المتاحة في التطبيق
+/// ---------------------------------------------------------------
+/// عند إضافة شاشة جديدة:
+/// 1. أضف القيمة هنا.
+/// 2. أضف الحالة في `screen_router.dart`.
+/// 3. اربطها بـ `screen: AppScreen.xxx` في `buildSidebarTree`.
 enum AppScreen {
+  // ── أساسية ─────────────────────────────────────────────────
   dashboard,
   resources,
   transactions,
@@ -18,6 +26,56 @@ enum AppScreen {
   reports,
   settings,
   help,
+
+  // ── المحاسبة ───────────────────────────────────────────────
+  chartOfAccounts,
+  journalEntryNew,
+  journalEntriesList,
+  recurringJournals,
+  generalLedger,
+  trialBalance,
+  profitLoss,
+  balanceSheet,
+  cashFlow,
+  costCenters,
+  openingBalances,
+
+  // ── المبيعات ───────────────────────────────────────────────
+  salesInvoiceNew,
+  salesInvoicesList,
+  salesReturns,
+  quotations,
+  salesOrders,
+  customersList,
+  discounts,
+
+  // ── المشتريات ──────────────────────────────────────────────
+  purchaseInvoiceNew,
+  purchaseInvoicesList,
+  purchaseReturns,
+  purchaseOrders,
+  suppliersList,
+
+  // ── المخزون ────────────────────────────────────────────────
+  itemsList,
+  itemGroups,
+  units,
+  warehousesList,
+  stockTransfer,
+  stockBalance,
+  stockAdjustment,
+  stockDamage,
+
+  // ── الخزينة والبنوك ────────────────────────────────────────
+  receiptVouchers,
+  paymentVouchers,
+  paymentMethods,
+  cashboxes,
+  bankAccounts,
+  chequesIn,
+  chequesOut,
+  chequesDue,
+  bankReconciliation,
 }
 
 class AppProvider extends ChangeNotifier {
@@ -28,7 +86,15 @@ class AppProvider extends ChangeNotifier {
   List<Rule> _rules = [];
   List<Insight> _insights = [];
 
+  // ── التنقل ─────────────────────────────────────────────────
   AppScreen _currentScreen = AppScreen.dashboard;
+
+  /// سجل التنقل — يسمح بالرجوع للشاشة السابقة
+  final List<AppScreen> _navigationStack = [AppScreen.dashboard];
+
+  /// وسائط اختيارية تُمرَّر للشاشة (مثل id عنصر لفتحه)
+  Map<String, dynamic> _screenArgs = {};
+
   bool _isDarkMode = false;
   bool _isLoading = true;
   String _currency = 'YER_NEW';
@@ -39,7 +105,13 @@ class AppProvider extends ChangeNotifier {
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   List<Rule> get rules => List.unmodifiable(_rules);
   List<Insight> get insights => List.unmodifiable(_insights);
+
   AppScreen get currentScreen => _currentScreen;
+  Map<String, dynamic> get screenArgs => Map.unmodifiable(_screenArgs);
+
+  /// هل يمكن الرجوع للخلف؟
+  bool get canGoBack => _navigationStack.length > 1;
+
   bool get isDarkMode => _isDarkMode;
   bool get isLoading => _isLoading;
   String get currency => _currency;
@@ -148,8 +220,50 @@ class AppProvider extends ChangeNotifier {
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
-  void navigateTo(AppScreen screen) {
+
+  /// الانتقال إلى شاشة مع تمرير وسائط اختيارية.
+  ///
+  /// - إذا كانت الشاشة هي الحالية بالفعل ولم تُمرَّر وسائط، لا يفعل شيئاً.
+  /// - يدفع الشاشة إلى الـ stack للسماح بالرجوع.
+  void navigateTo(AppScreen screen, {Map<String, dynamic>? args}) {
+    if (screen == _currentScreen && args == null) return;
+
+    _navigationStack.add(screen);
     _currentScreen = screen;
+    _screenArgs = args ?? {};
+    notifyListeners();
+  }
+
+  /// الرجوع للشاشة السابقة. يعيد `false` إن لم يوجد سجل.
+  bool goBack() {
+    if (_navigationStack.length <= 1) return false;
+    _navigationStack.removeLast();
+    _currentScreen = _navigationStack.last;
+    _screenArgs = {};
+    notifyListeners();
+    return true;
+  }
+
+  /// استبدال الشاشة الحالية دون إضافة سجل جديد.
+  /// مفيد بعد حفظ نموذج (مثلاً: من "قيد جديد" إلى "قائمة القيود").
+  void replaceWith(AppScreen screen, {Map<String, dynamic>? args}) {
+    if (_navigationStack.isNotEmpty) {
+      _navigationStack[_navigationStack.length - 1] = screen;
+    } else {
+      _navigationStack.add(screen);
+    }
+    _currentScreen = screen;
+    _screenArgs = args ?? {};
+    notifyListeners();
+  }
+
+  /// تفريغ السجل والعودة للوحة التحكم.
+  void resetNavigation() {
+    _navigationStack
+      ..clear()
+      ..add(AppScreen.dashboard);
+    _currentScreen = AppScreen.dashboard;
+    _screenArgs = {};
     notifyListeners();
   }
 
