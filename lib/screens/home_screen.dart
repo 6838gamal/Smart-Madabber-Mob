@@ -16,6 +16,7 @@ import 'add_entry_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'drawer_screen.dart';
 import 'accounting/general_ledger_screen.dart';
+import 'accounting/chart_of_accounts_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -220,7 +221,7 @@ class HomeScreen extends StatelessWidget {
 
       // ── المحاسبة ──────────────────────────────────────────
       case AppScreen.chartOfAccounts:
-        return const _ComingSoon(title: 'دليل الحسابات', icon: Icons.account_tree_outlined);
+        return const ChartOfAccountsScreen();
       case AppScreen.journalEntryNew:
         return const _ComingSoon(title: 'قيد جديد', icon: Icons.add);
       case AppScreen.journalEntriesList:
