@@ -15,6 +15,7 @@ import 'help_screen.dart';
 import 'add_entry_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'drawer_screen.dart';
+import 'accounting/general_ledger_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -227,8 +228,7 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.recurringJournals:
         return const _ComingSoon(title: 'القيود المتكررة', icon: Icons.repeat);
       case AppScreen.generalLedger:
-        return const _ComingSoon(title: 'دفتر الأستاذ', icon: Icons.book);
-      case AppScreen.trialBalance:
+        return const GeneralLedgerScreen();
         return const _ComingSoon(title: 'ميزان المراجعة', icon: Icons.balance);
       case AppScreen.profitLoss:
         return const _ComingSoon(title: 'الأرباح والخسائر', icon: Icons.trending_up);
