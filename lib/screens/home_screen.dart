@@ -229,6 +229,7 @@ class HomeScreen extends StatelessWidget {
         return const _ComingSoon(title: 'القيود المتكررة', icon: Icons.repeat);
       case AppScreen.generalLedger:
         return const GeneralLedgerScreen();
+      case AppScreen.trialBalance:
         return const _ComingSoon(title: 'ميزان المراجعة', icon: Icons.balance);
       case AppScreen.profitLoss:
         return const _ComingSoon(title: 'الأرباح والخسائر', icon: Icons.trending_up);
