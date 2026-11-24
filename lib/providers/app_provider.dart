@@ -97,7 +97,7 @@ class AppProvider extends ChangeNotifier {
   String _currency = 'YER_NEW';
   String _language = 'ar';
 
-  // ── Getters ───────────────────────────────────────────────────────────────
+  // ── Getters ────────────────────────────────────────────────
   List<Resource> get resources => List.unmodifiable(_resources);
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   List<Rule> get rules => List.unmodifiable(_rules);
@@ -127,7 +127,7 @@ class AppProvider extends ChangeNotifier {
   int get lowStockCount =>
       _resources.where((r) => r.status == ResourceStatus.low).length;
 
-  // ── Currency formatting ───────────────────────────────────────────────────
+  // ── Currency formatting ────────────────────────────────────
   String formatAmount(double amount) {
     final n = amount.toStringAsFixed(0);
     switch (_currency) {
@@ -155,7 +155,7 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  // ── Init ──────────────────────────────────────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────
   Future<void> init() async {
     await _storage.init();
 
@@ -222,7 +222,7 @@ class AppProvider extends ChangeNotifier {
     });
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────
+  // ── Navigation ────────────────────────────────────────────
   void navigateTo(AppScreen screen, {Map<String, dynamic>? args}) {
     if (screen == _currentScreen && args == null) return;
     _navigationStack.add(screen);
@@ -260,7 +260,7 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Resources ─────────────────────────────────────────────────────────────
+  // ── Resources ─────────────────────────────────────────────
   Future<void> addResource(Resource resource) async {
     _resources = [..._resources, resource];
     _runEngine();
@@ -288,7 +288,7 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Transactions ──────────────────────────────────────────────────────────
+  // ── Transactions ──────────────────────────────────────────
   Future<void> addTransaction(Transaction txn) async {
     _transactions = [..._transactions, txn];
 
@@ -333,7 +333,7 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Rules ─────────────────────────────────────────────────────────────────
+  // ── Rules ─────────────────────────────────────────────────
   Future<void> toggleRule(String id) async {
     _rules = _rules
         .map((r) => r.id == id ? r.copyWith(enabled: !r.enabled) : r)
@@ -361,7 +361,7 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Insights ──────────────────────────────────────────────────────────────
+  // ── Insights ──────────────────────────────────────────────
   Future<void> dismissInsight(String id) async {
     _insights = _insights
         .map((i) =>
@@ -386,7 +386,7 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Settings ──────────────────────────────────────────────────────────────
+  // ── Settings ──────────────────────────────────────────────
   Future<void> toggleDarkMode() async {
     _isDarkMode = !_isDarkMode;
     await _saveSettings();
@@ -405,7 +405,7 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Analytics helpers ─────────────────────────────────────────────────────
+  // ── Analytics helpers ─────────────────────────────────────
   List<Transaction> transactionsForResource(String resourceId) =>
       _transactions.where((t) => t.resourceId == resourceId).toList()
         ..sort((a, b) => b.date.compareTo(a.date));
@@ -436,7 +436,7 @@ class AppProvider extends ChangeNotifier {
   String newTransactionId() => _uuid.v4();
   String newJournalEntryId() => _uuid.v4();
 
-  // ── Accounts ──────────────────────────────────────────────────────────────
+  // ── Accounts ──────────────────────────────────────────────
   Account? accountById(String id) {
     try {
       return _accounts.firstWhere((a) => a.id == id);
@@ -467,9 +467,9 @@ class AppProvider extends ChangeNotifier {
       _accounts.where((a) => a.type == type).toList()
         ..sort((a, b) => a.code.compareTo(b.code));
 
-  // ── Journal Entries / Ledger ──────────────────────────────────────────────
+  // ── Journal Entries / Ledger ──────────────────────────────
 
-  /// حركات حساب معيّن ضمن فترة (مع الرصيد الافتتاحي محسوباً مسبقاً)
+  /// حركات حساب معيّن ضمن فترة
   List<LedgerMovement> movementsForAccount(
     String accountId, {
     DateTime? from,
@@ -523,6 +523,41 @@ class AppProvider extends ChangeNotifier {
     return total;
   }
 
+  /// مجموع مدين/دائن لكل حساب ضمن فترة
+  /// القيمة المعادة: accountId → (debit, credit)
+  Map<String, ({double debit, double credit})> totalsByAccount({
+    DateTime? from,
+    DateTime? to,
+  }) {
+    final result = <String, ({double debit, double credit})>{};
+    for (final entry in _journalEntries) {
+      if (from != null && entry.date.isBefore(from)) continue;
+      if (to != null && entry.date.isAfter(to.add(const Duration(days: 1)))) {
+        continue;
+      }
+      for (final line in entry.lines) {
+        final cur = result[line.accountId] ?? (debit: 0.0, credit: 0.0);
+        result[line.accountId] = (
+          debit: cur.debit + line.debit,
+          credit: cur.credit + line.credit,
+        );
+      }
+    }
+    return result;
+  }
+
+  /// القيود ضمن فترة (مفيد للتقارير)
+  List<JournalEntry> entriesInRange({DateTime? from, DateTime? to}) {
+    return _journalEntries.where((e) {
+      if (from != null && e.date.isBefore(from)) return false;
+      if (to != null && e.date.isAfter(to.add(const Duration(days: 1)))) {
+        return false;
+      }
+      return true;
+    }).toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+  }
+
   /// إضافة قيد جديد (يتحقق من التوازن)
   Future<void> addJournalEntry(JournalEntry entry) async {
     if (!entry.isBalanced) {
@@ -554,13 +589,17 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// حذف حساب (إن لم يكن له حركات)
+  /// حذف حساب (إن لم يكن له حركات أو أبناء)
   Future<void> deleteAccount(String id) async {
     final hasMovements = _journalEntries.any(
       (e) => e.lines.any((l) => l.accountId == id),
     );
     if (hasMovements) {
       throw ArgumentError('لا يمكن حذف حساب له حركات مرتبطة');
+    }
+    final hasChildren = _accounts.any((a) => a.parentId == id);
+    if (hasChildren) {
+      throw ArgumentError('لا يمكن حذف حساب له حسابات فرعية');
     }
     _accounts = _accounts.where((a) => a.id != id).toList();
     // await _storage.saveAccounts(_accounts);
