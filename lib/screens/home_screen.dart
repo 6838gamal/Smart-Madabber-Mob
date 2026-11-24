@@ -90,6 +90,7 @@ class HomeScreen extends StatelessWidget {
   /// عنوان الشاشة الحالية لعرضه في الـ AppBar
   String _screenTitle(AppScreen screen) {
     switch (screen) {
+      // ── شاشات أساسية ──────────────────────────────────────
       case AppScreen.dashboard:
         return 'الرئيسية';
       case AppScreen.resources:
@@ -104,12 +105,103 @@ class HomeScreen extends StatelessWidget {
         return 'الإعدادات';
       case AppScreen.help:
         return 'المساعدة';
+
+      // ── المحاسبة ──────────────────────────────────────────
+      case AppScreen.chartOfAccounts:
+        return 'دليل الحسابات';
+      case AppScreen.journalEntryNew:
+        return 'قيد جديد';
+      case AppScreen.journalEntriesList:
+        return 'قائمة القيود';
+      case AppScreen.recurringJournals:
+        return 'القيود المتكررة';
+      case AppScreen.generalLedger:
+        return 'دفتر الأستاذ';
+      case AppScreen.trialBalance:
+        return 'ميزان المراجعة';
+      case AppScreen.profitLoss:
+        return 'الأرباح والخسائر';
+      case AppScreen.balanceSheet:
+        return 'الميزانية العمومية';
+      case AppScreen.cashFlow:
+        return 'التدفقات النقدية';
+      case AppScreen.costCenters:
+        return 'مراكز التكلفة / الفروع';
+      case AppScreen.openingBalances:
+        return 'الأرصدة الافتتاحية';
+
+      // ── المبيعات ──────────────────────────────────────────
+      case AppScreen.salesInvoiceNew:
+        return 'فاتورة بيع جديدة';
+      case AppScreen.salesInvoicesList:
+        return 'قائمة فواتير البيع';
+      case AppScreen.salesReturns:
+        return 'مرتجع المبيعات';
+      case AppScreen.quotations:
+        return 'عروض الأسعار';
+      case AppScreen.salesOrders:
+        return 'أوامر البيع';
+      case AppScreen.customersList:
+        return 'قائمة العملاء';
+      case AppScreen.discounts:
+        return 'الخصومات والأسعار الخاصة';
+
+      // ── المشتريات ─────────────────────────────────────────
+      case AppScreen.purchaseInvoiceNew:
+        return 'فاتورة شراء جديدة';
+      case AppScreen.purchaseInvoicesList:
+        return 'قائمة فواتير الشراء';
+      case AppScreen.purchaseReturns:
+        return 'مرتجع المشتريات';
+      case AppScreen.purchaseOrders:
+        return 'أوامر الشراء';
+      case AppScreen.suppliersList:
+        return 'قائمة الموردين';
+
+      // ── المخزون ───────────────────────────────────────────
+      case AppScreen.itemsList:
+        return 'قائمة الأصناف';
+      case AppScreen.itemGroups:
+        return 'مجموعات الأصناف';
+      case AppScreen.units:
+        return 'وحدات القياس';
+      case AppScreen.warehousesList:
+        return 'قائمة المخازن';
+      case AppScreen.stockTransfer:
+        return 'تحويل بين المخازن';
+      case AppScreen.stockBalance:
+        return 'رصيد المخزون';
+      case AppScreen.stockAdjustment:
+        return 'تسوية المخزون / الجرد';
+      case AppScreen.stockDamage:
+        return 'التالف والهالك';
+
+      // ── الخزينة والبنوك ───────────────────────────────────
+      case AppScreen.receiptVouchers:
+        return 'سندات القبض';
+      case AppScreen.paymentVouchers:
+        return 'سندات الصرف';
+      case AppScreen.paymentMethods:
+        return 'طرق الدفع';
+      case AppScreen.cashboxes:
+        return 'الخزائن';
+      case AppScreen.bankAccounts:
+        return 'الحسابات البنكية';
+      case AppScreen.chequesIn:
+        return 'شيكات واردة';
+      case AppScreen.chequesOut:
+        return 'شيكات صادرة';
+      case AppScreen.chequesDue:
+        return 'شيكات مستحقة';
+      case AppScreen.bankReconciliation:
+        return 'التسويات البنكية';
     }
   }
 
   // ---------------- محتوى الشاشات ----------------
   Widget _buildContent(AppScreen screen) {
     switch (screen) {
+      // ── شاشات جاهزة ───────────────────────────────────────
       case AppScreen.dashboard:
         return const DashboardScreen();
       case AppScreen.resources:
@@ -124,6 +216,96 @@ class HomeScreen extends StatelessWidget {
         return const SettingsScreen();
       case AppScreen.help:
         return const HelpScreen();
+
+      // ── المحاسبة ──────────────────────────────────────────
+      case AppScreen.chartOfAccounts:
+        return const _ComingSoon(title: 'دليل الحسابات', icon: Icons.account_tree_outlined);
+      case AppScreen.journalEntryNew:
+        return const _ComingSoon(title: 'قيد جديد', icon: Icons.add);
+      case AppScreen.journalEntriesList:
+        return const _ComingSoon(title: 'قائمة القيود', icon: Icons.list);
+      case AppScreen.recurringJournals:
+        return const _ComingSoon(title: 'القيود المتكررة', icon: Icons.repeat);
+      case AppScreen.generalLedger:
+        return const _ComingSoon(title: 'دفتر الأستاذ', icon: Icons.book);
+      case AppScreen.trialBalance:
+        return const _ComingSoon(title: 'ميزان المراجعة', icon: Icons.balance);
+      case AppScreen.profitLoss:
+        return const _ComingSoon(title: 'الأرباح والخسائر', icon: Icons.trending_up);
+      case AppScreen.balanceSheet:
+        return const _ComingSoon(title: 'الميزانية العمومية', icon: Icons.account_balance);
+      case AppScreen.cashFlow:
+        return const _ComingSoon(title: 'التدفقات النقدية', icon: Icons.swap_vert);
+      case AppScreen.costCenters:
+        return const _ComingSoon(title: 'مراكز التكلفة / الفروع', icon: Icons.hub_outlined);
+      case AppScreen.openingBalances:
+        return const _ComingSoon(title: 'الأرصدة الافتتاحية', icon: Icons.play_circle_outline);
+
+      // ── المبيعات ──────────────────────────────────────────
+      case AppScreen.salesInvoiceNew:
+        return const _ComingSoon(title: 'فاتورة بيع جديدة', icon: Icons.add);
+      case AppScreen.salesInvoicesList:
+        return const _ComingSoon(title: 'قائمة فواتير البيع', icon: Icons.list);
+      case AppScreen.salesReturns:
+        return const _ComingSoon(title: 'مرتجع المبيعات', icon: Icons.assignment_return_outlined);
+      case AppScreen.quotations:
+        return const _ComingSoon(title: 'عروض الأسعار', icon: Icons.request_quote_outlined);
+      case AppScreen.salesOrders:
+        return const _ComingSoon(title: 'أوامر البيع', icon: Icons.shopping_cart_outlined);
+      case AppScreen.customersList:
+        return const _ComingSoon(title: 'قائمة العملاء', icon: Icons.people_outline);
+      case AppScreen.discounts:
+        return const _ComingSoon(title: 'الخصومات والأسعار الخاصة', icon: Icons.percent);
+
+      // ── المشتريات ─────────────────────────────────────────
+      case AppScreen.purchaseInvoiceNew:
+        return const _ComingSoon(title: 'فاتورة شراء جديدة', icon: Icons.add);
+      case AppScreen.purchaseInvoicesList:
+        return const _ComingSoon(title: 'قائمة فواتير الشراء', icon: Icons.list);
+      case AppScreen.purchaseReturns:
+        return const _ComingSoon(title: 'مرتجع المشتريات', icon: Icons.assignment_return_outlined);
+      case AppScreen.purchaseOrders:
+        return const _ComingSoon(title: 'أوامر الشراء', icon: Icons.shopping_cart_outlined);
+      case AppScreen.suppliersList:
+        return const _ComingSoon(title: 'قائمة الموردين', icon: Icons.local_shipping_outlined);
+
+      // ── المخزون ───────────────────────────────────────────
+      case AppScreen.itemsList:
+        return const _ComingSoon(title: 'قائمة الأصناف', icon: Icons.list);
+      case AppScreen.itemGroups:
+        return const _ComingSoon(title: 'مجموعات الأصناف', icon: Icons.folder_outlined);
+      case AppScreen.units:
+        return const _ComingSoon(title: 'وحدات القياس', icon: Icons.straighten);
+      case AppScreen.warehousesList:
+        return const _ComingSoon(title: 'قائمة المخازن', icon: Icons.list);
+      case AppScreen.stockTransfer:
+        return const _ComingSoon(title: 'تحويل بين المخازن', icon: Icons.swap_horiz);
+      case AppScreen.stockBalance:
+        return const _ComingSoon(title: 'رصيد المخزون', icon: Icons.inventory);
+      case AppScreen.stockAdjustment:
+        return const _ComingSoon(title: 'تسوية المخزون / الجرد', icon: Icons.tune);
+      case AppScreen.stockDamage:
+        return const _ComingSoon(title: 'التالف والهالك', icon: Icons.delete_outline);
+
+      // ── الخزينة والبنوك ───────────────────────────────────
+      case AppScreen.receiptVouchers:
+        return const _ComingSoon(title: 'سندات القبض', icon: Icons.call_received);
+      case AppScreen.paymentVouchers:
+        return const _ComingSoon(title: 'سندات الصرف', icon: Icons.call_made);
+      case AppScreen.paymentMethods:
+        return const _ComingSoon(title: 'طرق الدفع', icon: Icons.payment);
+      case AppScreen.cashboxes:
+        return const _ComingSoon(title: 'الخزائن', icon: Icons.savings_outlined);
+      case AppScreen.bankAccounts:
+        return const _ComingSoon(title: 'الحسابات البنكية', icon: Icons.account_balance);
+      case AppScreen.chequesIn:
+        return const _ComingSoon(title: 'شيكات واردة', icon: Icons.south_west);
+      case AppScreen.chequesOut:
+        return const _ComingSoon(title: 'شيكات صادرة', icon: Icons.north_east);
+      case AppScreen.chequesDue:
+        return const _ComingSoon(title: 'شيكات مستحقة', icon: Icons.schedule);
+      case AppScreen.bankReconciliation:
+        return const _ComingSoon(title: 'التسويات البنكية', icon: Icons.fact_check_outlined);
     }
   }
 
@@ -250,6 +432,47 @@ class _BottomNav extends StatelessWidget {
               label,
               style: TextStyle(fontSize: 10, color: color),
               overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------- Placeholder للشاشات قيد التطوير ----------------
+class _ComingSoon extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const _ComingSoon({required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'هذه الشاشة قيد التطوير',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
