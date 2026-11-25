@@ -5,6 +5,7 @@ import '../models/transaction.dart';
 import '../models/rule.dart';
 import '../models/insight.dart';
 import '../models/customer.dart';
+import '../models/sales_invoice.dart';
 
 class StorageService {
   static const _resourcesKey = 'sm_resources';
@@ -14,6 +15,7 @@ class StorageService {
   static const _settingsKey = 'sm_settings';
   static const _seededKey = 'sm_seeded';
   static const _customersKey = 'sm_customers';
+  static const _salesInvoicesKey = 'sm_sales_invoices';
 
   SharedPreferences? _prefs;
 
@@ -89,6 +91,19 @@ class StorageService {
 
   Future<void> saveCustomers(List<Customer> customers) async {
     await prefs.setString(_customersKey, jsonEncode(customers.map((c) => c.toJson()).toList()));
+  }
+
+  // ─── Sales Invoices (فواتير البيع) ────────────────────────────────────────
+
+  Future<List<SalesInvoice>> loadSalesInvoices() async {
+    final json = prefs.getString(_salesInvoicesKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((e) => SalesInvoice.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveSalesInvoices(List<SalesInvoice> invoices) async {
+    await prefs.setString(_salesInvoicesKey, jsonEncode(invoices.map((i) => i.toJson()).toList()));
   }
 
   // ─── Settings ─────────────────────────────────────────────────────────────
