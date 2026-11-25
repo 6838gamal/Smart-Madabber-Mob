@@ -822,7 +822,7 @@ List<RecurringJournal> get recurringJournals =>
     }
     return result;
   }
-}
+
 
   // ── Recurring Journals (القيود المتكررة) ──────────────────
   RecurringJournal? recurringJournalById(String id) {
@@ -924,7 +924,7 @@ List<RecurringJournal> get recurringJournals =>
     final dd = d.day.toString().padLeft(2, '0');
     return '$y$m$dd';
   }
-
+﴿
 // ── LedgerMovement: حركة واحدة في دفتر الأستاذ ──────────────
 class LedgerMovement {
   final String entryId;
