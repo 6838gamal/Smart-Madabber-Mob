@@ -3,11 +3,12 @@ import 'package:uuid/uuid.dart';
 
 import '../models/customer.dart';
 import '../models/sales_invoice.dart';
+import '../models/sales_document.dart';
 import '../services/storage_service.dart';
 
 const _uuid = Uuid();
 
-/// مزوّد وحدة المبيعات — يدير العملاء والفواتير
+/// مزوّد وحدة المبيعات — العملاء + الفواتير + المستندات (عروض/أوامر/مرتجعات)
 class SalesProvider extends ChangeNotifier {
   final StorageService _storage;
 
@@ -15,11 +16,13 @@ class SalesProvider extends ChangeNotifier {
 
   List<Customer> _customers = [];
   List<SalesInvoice> _invoices = [];
+  List<SalesDocument> _documents = [];
   bool _isLoading = true;
 
   // ── Getters ──────────────────────────────────────────────
   List<Customer> get customers => List.unmodifiable(_customers);
   List<SalesInvoice> get invoices => List.unmodifiable(_invoices);
+  List<SalesDocument> get documents => List.unmodifiable(_documents);
   bool get isLoading => _isLoading;
 
   List<Customer> get activeCustomers =>
@@ -50,11 +53,23 @@ class SalesProvider extends ChangeNotifier {
     }
   }
 
+  SalesDocument? documentById(String id) {
+    try {
+      return _documents.firstWhere((d) => d.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   List<SalesInvoice> invoicesForCustomer(String customerId) =>
       _invoices.where((i) => i.customerId == customerId).toList()
         ..sort((a, b) => b.date.compareTo(a.date));
 
-  /// بحث بالاسم/الكود/الهاتف
+  List<SalesDocument> documentsByType(SalesDocType type) =>
+      _documents.where((d) => d.type == type).toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+
+  /// بحث العملاء بالاسم/الكود/الهاتف
   List<Customer> search(String query) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return sortedCustomers;
@@ -69,6 +84,7 @@ class SalesProvider extends ChangeNotifier {
   Future<void> init() async {
     _customers = await _storage.loadCustomers();
     _invoices = await _storage.loadSalesInvoices();
+    _documents = await _storage.loadSalesDocuments();
     _isLoading = false;
     notifyListeners();
   }
@@ -171,7 +187,103 @@ class SalesProvider extends ChangeNotifier {
     return 'INV-${(max + 1).toString().padLeft(4, '0')}';
   }
 
+  // ── Documents (عروض/أوامر/مرتجعات) ────────────────────────
+  Future<void> addDocument(SalesDocument doc) async {
+    _documents = [doc, ..._documents];
+    // المرتجع المعتمد يخصم من رصيد العميل
+    if (doc.type == SalesDocType.salesReturn &&
+        doc.status == SalesDocStatus.accepted) {
+      _updateCustomerBalance(doc.customerId, -doc.grandTotal);
+      await _storage.saveCustomers(_customers);
+    }
+    await _storage.saveSalesDocuments(_documents);
+    notifyListeners();
+  }
+
+  Future<void> updateDocument(SalesDocument doc) async {
+    final old = documentById(doc.id);
+    if (old != null &&
+        old.type == SalesDocType.salesReturn &&
+        old.status == SalesDocStatus.accepted) {
+      // عكس أثر المرتجع القديم
+      _updateCustomerBalance(old.customerId, old.grandTotal);
+    }
+    _documents =
+        _documents.map((d) => d.id == doc.id ? doc : d).toList();
+    if (doc.type == SalesDocType.salesReturn &&
+        doc.status == SalesDocStatus.accepted) {
+      _updateCustomerBalance(doc.customerId, -doc.grandTotal);
+    }
+    await Future.wait([
+      _storage.saveSalesDocuments(_documents),
+      _storage.saveCustomers(_customers),
+    ]);
+    notifyListeners();
+  }
+
+  Future<void> deleteDocument(String id) async {
+    final old = documentById(id);
+    if (old != null &&
+        old.type == SalesDocType.salesReturn &&
+        old.status == SalesDocStatus.accepted) {
+      _updateCustomerBalance(old.customerId, old.grandTotal);
+    }
+    _documents = _documents.where((d) => d.id != id).toList();
+    await Future.wait([
+      _storage.saveSalesDocuments(_documents),
+      _storage.saveCustomers(_customers),
+    ]);
+    notifyListeners();
+  }
+
+  /// توليد رقم مستند فريد (QT-0001 / SO-0001 / SR-0001)
+  String generateDocNumber(SalesDocType type) {
+    final prefix = SalesDocument.prefixFor(type);
+    final sameType = _documents.where((d) => d.type == type);
+    if (sameType.isEmpty) return '$prefix-0001';
+    final nums = sameType.map((d) {
+      final m = RegExp('$prefix-(\\d+)').firstMatch(d.docNumber);
+      return m != null ? int.parse(m.group(1)!) : 0;
+    }).where((n) => n > 0);
+    final max = nums.isEmpty ? 0 : nums.reduce((a, b) => a > b ? a : b);
+    return '$prefix-${(max + 1).toString().padLeft(4, '0')}';
+  }
+
+  /// تحويل مستند (عرض/أمر) إلى فاتورة بيع
+  Future<SalesInvoice> convertDocumentToInvoice(SalesDocument doc) async {
+    if (doc.type == SalesDocType.salesReturn) {
+      throw ArgumentError('لا يمكن تحويل مرتجع إلى فاتورة');
+    }
+    if (doc.convertedToInvoiceId != null) {
+      throw ArgumentError('تم تحويل هذا المستند مسبقاً');
+    }
+    final invoice = SalesInvoice(
+      id: newInvoiceId(),
+      invoiceNumber: generateInvoiceNumber(),
+      customerId: doc.customerId,
+      customerName: doc.customerName,
+      date: DateTime.now(),
+      lines: doc.lines,
+      notes: doc.notes,
+      status: InvoiceStatus.confirmed,
+      paymentStatus: PaymentStatus.unpaid,
+      invoiceDiscountPercent: doc.discountPercent,
+      createdAt: DateTime.now(),
+    );
+    await addInvoice(invoice);
+
+    final updated = doc.copyWith(
+      status: SalesDocStatus.converted,
+      convertedToInvoiceId: invoice.id,
+      updatedAt: DateTime.now(),
+    );
+    await updateDocument(updated);
+
+    return invoice;
+  }
+
   // ── ID generators ────────────────────────────────────────
   String newCustomerId() => _uuid.v4();
   String newInvoiceId() => _uuid.v4();
+  String newDocumentId() => _uuid.v4();
 }
