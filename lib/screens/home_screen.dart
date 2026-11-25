@@ -31,6 +31,11 @@ import 'sales/sales_invoice_new_screen.dart';
 import 'sales/sales_invoices_list_screen.dart';
 import 'sales/sales_documents_list_screen.dart';
 import '../models/sales_document.dart';
+import '../models/purchase_document.dart';
+import 'purchases/suppliers_list_screen.dart';
+import 'purchases/purchase_invoices_list_screen.dart';
+import 'purchases/purchase_invoice_new_screen.dart';
+import 'purchases/purchase_documents_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -275,15 +280,15 @@ class HomeScreen extends StatelessWidget {
 
       // ── المشتريات ─────────────────────────────────────────
       case AppScreen.purchaseInvoiceNew:
-        return const _ComingSoon(title: 'فاتورة شراء جديدة', icon: Icons.add);
-      case AppScreen.purchaseInvoicesList:
-        return const _ComingSoon(title: 'قائمة فواتير الشراء', icon: Icons.list);
-      case AppScreen.purchaseReturns:
-        return const _ComingSoon(title: 'مرتجع المشتريات', icon: Icons.assignment_return_outlined);
-      case AppScreen.purchaseOrders:
-        return const _ComingSoon(title: 'أوامر الشراء', icon: Icons.shopping_cart_outlined);
-      case AppScreen.suppliersList:
-        return const _ComingSoon(title: 'قائمة الموردين', icon: Icons.local_shipping_outlined);
+  return const PurchaseInvoiceNewScreen();
+case AppScreen.purchaseInvoicesList:
+  return const PurchaseInvoicesListScreen();
+case AppScreen.purchaseReturns:
+  return const PurchaseDocumentsListScreen(type: PurchaseDocType.purchaseReturn);
+case AppScreen.purchaseOrders:
+  return const PurchaseDocumentsListScreen(type: PurchaseDocType.purchaseOrder);
+case AppScreen.suppliersList:
+  return const SuppliersListScreen();
 
       // ── المخزون ───────────────────────────────────────────
       case AppScreen.itemsList:
