@@ -27,6 +27,8 @@ import 'accounting/opening_balances_screen.dart';
 import 'accounting/cost_centers_screen.dart';
 import 'accounting/recurring_journal_form_screen.dart';
 import 'sales/customers_list_screen.dart';
+import 'sales/sales_invoice_new_screen.dart';
+import 'sales/sales_invoices_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -255,9 +257,9 @@ class HomeScreen extends StatelessWidget {
 
       // ── المبيعات ──────────────────────────────────────────
       case AppScreen.salesInvoiceNew:
-        return const _ComingSoon(title: 'فاتورة بيع جديدة', icon: Icons.add);
+        return const SalesInvoiceNewScreen();
       case AppScreen.salesInvoicesList:
-        return const _ComingSoon(title: 'قائمة فواتير البيع', icon: Icons.list);
+        return const SalesInvoicesListScreen();
       case AppScreen.salesReturns:
         return const _ComingSoon(title: 'مرتجع المبيعات', icon: Icons.assignment_return_outlined);
       case AppScreen.quotations:
