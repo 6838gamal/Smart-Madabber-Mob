@@ -11,6 +11,7 @@ import '../services/storage_service.dart';
 import '../engine/rules_engine.dart';
 import '../engine/seed_data.dart';
 import '../engine/seed_accounts.dart';
+import '../models/recurring_journal.dart';
 
 const _uuid = Uuid();
 
@@ -129,6 +130,10 @@ class AppProvider extends ChangeNotifier {
 
   int get lowStockCount =>
       _resources.where((r) => r.status == ResourceStatus.low).length;
+
+  List<RecurringJournal> _recurringJournals = [];
+List<RecurringJournal> get recurringJournals =>
+    List.unmodifiable(_recurringJournals);
 
   // ── Currency formatting ────────────────────────────────────
   String formatAmount(double amount) {
@@ -818,6 +823,107 @@ class AppProvider extends ChangeNotifier {
     return result;
   }
 }
+
+  // ── Recurring Journals (القيود المتكررة) ──────────────────
+  RecurringJournal? recurringJournalById(String id) {
+    try {
+      return _recurringJournals.firstWhere((r) => r.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<RecurringJournal> get sortedRecurringJournals =>
+      List<RecurringJournal>.from(_recurringJournals)
+        ..sort((a, b) => a.reference.compareTo(b.reference));
+
+  /// عدد القوالب المستحقة الآن
+  int get dueRecurringCount =>
+      _recurringJournals.where((r) => r.isDue).length;
+
+  Future<void> addRecurringJournal(RecurringJournal r) async {
+    if (!r.isBalanced) {
+      throw ArgumentError('القالب غير متوازن');
+    }
+    _recurringJournals = [..._recurringJournals, r];
+    // await _storage.saveRecurringJournals(_recurringJournals);
+    notifyListeners();
+  }
+
+  Future<void> updateRecurringJournal(RecurringJournal r) async {
+    if (!r.isBalanced) {
+      throw ArgumentError('القالب غير متوازن');
+    }
+    _recurringJournals =
+        _recurringJournals.map((x) => x.id == r.id ? r : x).toList();
+    // await _storage.saveRecurringJournals(_recurringJournals);
+    notifyListeners();
+  }
+
+  Future<void> deleteRecurringJournal(String id) async {
+    _recurringJournals =
+        _recurringJournals.where((r) => r.id != id).toList();
+    // await _storage.saveRecurringJournals(_recurringJournals);
+    notifyListeners();
+  }
+
+  Future<void> toggleRecurringJournal(String id) async {
+    _recurringJournals = _recurringJournals
+        .map((r) => r.id == id ? r.copyWith(isActive: !r.isActive) : r)
+        .toList();
+    notifyListeners();
+  }
+
+  /// إنشاء القيود المستحقة لقيد متكرر معيّن (حتى تاريخ محدد)
+  Future<int> generateDueEntriesFor(String recurringId) async {
+    final r = recurringJournalById(recurringId);
+    if (r == null) return 0;
+    final dates = r.pendingDates();
+    if (dates.isEmpty) return 0;
+
+    final generated = <JournalEntry>[];
+    DateTime last = r.lastGenerated ?? r.startDate;
+
+    for (final date in dates) {
+      final entry = JournalEntry(
+        id: newJournalEntryId(),
+        reference: '${r.reference}-${_formatCompactDate(date)}',
+        date: date,
+        description: r.description,
+        lines: r.lines,
+      );
+      generated.add(entry);
+      last = date;
+    }
+
+    _journalEntries = [...generated, ..._journalEntries];
+    _recurringJournals = _recurringJournals
+        .map((x) => x.id == r.id ? x.copyWith(lastGenerated: last) : x)
+        .toList();
+    // await _storage.saveJournalEntries(_journalEntries);
+    notifyListeners();
+    return generated.length;
+  }
+
+  /// إنشاء كل القيود المستحقة لكل القوالب
+  Future<int> generateAllDueEntries() async {
+    int total = 0;
+    final ids = _recurringJournals
+        .where((r) => r.isDue)
+        .map((r) => r.id)
+        .toList();
+    for (final id in ids) {
+      total += await generateDueEntriesFor(id);
+    }
+    return total;
+  }
+
+  String _formatCompactDate(DateTime d) {
+    final y = d.year.toString();
+    final m = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
+    return '$y$m$dd';
+  }
 
 // ── LedgerMovement: حركة واحدة في دفتر الأستاذ ──────────────
 class LedgerMovement {
