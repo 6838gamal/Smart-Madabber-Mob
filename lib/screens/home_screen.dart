@@ -24,6 +24,7 @@ import 'accounting/profit_loss_screen.dart';
 import 'accounting/balance_sheet_screen.dart';
 import 'accounting/cash_flow_screen.dart';
 import 'accounting/opening_balances_screen.dart';
+import 'accounting/cost_centers_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -246,7 +247,7 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.cashFlow:
         return const CashFlowScreen();
       case AppScreen.costCenters:
-        return const _ComingSoon(title: 'مراكز التكلفة / الفروع', icon: Icons.hub_outlined);
+        return const CostCentersScreen();
       case AppScreen.openingBalances:
         return const OpeningBalancesScreen();
 
