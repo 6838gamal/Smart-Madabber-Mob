@@ -589,6 +589,39 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// الحسابات النقدية (أصول بأكواد تبدأ بـ 11 عادةً)
+/// نعتبرها: أي حساب أصل ورقي اسمه يحتوي على "نقد" أو "صندوق" أو "بنك"
+/// أو كوده يبدأ بـ 111 أو 112
+List<Account> get cashAccounts {
+  return _accounts.where((a) {
+    if (a.type != AccountType.asset) return false;
+    final name = a.name;
+    final code = a.code;
+    return name.contains('نقد') ||
+        name.contains('صندوق') ||
+        name.contains('بنك') ||
+        name.contains('خزينة') ||
+        code.startsWith('111') ||
+        code.startsWith('112');
+  }).toList()
+    ..sort((a, b) => a.code.compareTo(b.code));
+}
+
+/// هل هذا الحساب نقدي؟
+bool isCashAccount(String accountId) {
+  final acc = accountById(accountId);
+  if (acc == null) return false;
+  if (acc.type != AccountType.asset) return false;
+  final name = acc.name;
+  final code = acc.code;
+  return name.contains('نقد') ||
+      name.contains('صندوق') ||
+      name.contains('بنك') ||
+      name.contains('خزينة') ||
+      code.startsWith('111') ||
+      code.startsWith('112');
+}
+
   /// حذف حساب (إن لم يكن له حركات أو أبناء)
   Future<void> deleteAccount(String id) async {
     final hasMovements = _journalEntries.any(
