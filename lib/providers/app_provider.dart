@@ -135,6 +135,9 @@ class AppProvider extends ChangeNotifier {
 List<RecurringJournal> get recurringJournals =>
     List.unmodifiable(_recurringJournals);
 
+
+  StorageService get storage => _storage;
+
   // ── Currency formatting ────────────────────────────────────
   String formatAmount(double amount) {
     final n = amount.toStringAsFixed(0);
