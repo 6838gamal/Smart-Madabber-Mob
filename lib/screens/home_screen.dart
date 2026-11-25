@@ -26,6 +26,7 @@ import 'accounting/cash_flow_screen.dart';
 import 'accounting/opening_balances_screen.dart';
 import 'accounting/cost_centers_screen.dart';
 import 'accounting/recurring_journal_form_screen.dart';
+import 'sales/customers_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -264,7 +265,7 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.salesOrders:
         return const _ComingSoon(title: 'أوامر البيع', icon: Icons.shopping_cart_outlined);
       case AppScreen.customersList:
-        return const _ComingSoon(title: 'قائمة العملاء', icon: Icons.people_outline);
+        return const CustomersListScreen();
       case AppScreen.discounts:
         return const _ComingSoon(title: 'الخصومات والأسعار الخاصة', icon: Icons.percent);
 
