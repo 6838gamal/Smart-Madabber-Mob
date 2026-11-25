@@ -2,13 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
+import 'providers/sales_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppProvider()..init(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppProvider()..init()),
+        ChangeNotifierProvider(create: (ctx) {
+          final app = ctx.read<AppProvider>();
+          final sales = SalesProvider(app.storage);
+          sales.init();
+          return sales;
+        }),
+      ],
       child: const SmartAdvisorApp(),
     ),
   );
