@@ -23,6 +23,7 @@ import 'accounting/trial_balance_screen.dart';
 import 'accounting/profit_loss_screen.dart';
 import 'accounting/balance_sheet_screen.dart';
 import 'accounting/cash_flow_screen.dart';
+import 'accounting/opening_balances_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -247,7 +248,7 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.costCenters:
         return const _ComingSoon(title: 'مراكز التكلفة / الفروع', icon: Icons.hub_outlined);
       case AppScreen.openingBalances:
-        return const _ComingSoon(title: 'الأرصدة الافتتاحية', icon: Icons.play_circle_outline);
+        return const OpeningBalancesScreen();
 
       // ── المبيعات ──────────────────────────────────────────
       case AppScreen.salesInvoiceNew:
