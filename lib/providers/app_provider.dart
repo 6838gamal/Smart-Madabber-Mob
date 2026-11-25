@@ -685,25 +685,31 @@ class AppProvider extends ChangeNotifier {
     // بناء سطور القيد
     final lines = <JournalLine>[];
     for (final entry in balances.entries) {
-      if (entry.value.abs() < 0.01) continue;
-      final acc = accountById(entry.key);
-      if (acc == null) continue;
-      final isDebitNature = acc.type == AccountType.asset ||
-          acc.type == AccountType.expense;
-      final v = entry.value;
-      final debit = isDebitNature
-          ? (v > 0 ? v : 0)
-          : (v < 0 ? -v : 0);
-      final credit = isDebitNature
-          ? (v < 0 ? -v : 0)
-          : (v > 0 ? v : 0);
-      if (debit < 0.01 && credit < 0.01) continue;
-      lines.add(JournalLine(
-        accountId: entry.key,
-        debit: debit,
-        credit: credit,
-        description: 'رصيد افتتاحي',
-      ));
+  if (entry.value.abs() < 0.01) continue;
+  final acc = accountById(entry.key);
+  if (acc == null) continue;
+  final isDebitNature = acc.type == AccountType.asset ||
+      acc.type == AccountType.expense;
+  final v = entry.value;
+
+  final double debit;
+  final double credit;
+  if (isDebitNature) {
+    debit = v > 0 ? v : 0.0;
+    credit = v < 0 ? -v : 0.0;
+  } else {
+    debit = v < 0 ? -v : 0.0;
+    credit = v > 0 ? v : 0.0;
+  }
+
+  if (debit < 0.01 && credit < 0.01) continue;
+
+  lines.add(JournalLine(
+    accountId: entry.key,
+    debit: debit,
+    credit: credit,
+    description: 'رصيد افتتاحي',
+  ));
     }
 
     if (lines.isEmpty) return;
