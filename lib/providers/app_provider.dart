@@ -467,6 +467,37 @@ class AppProvider extends ChangeNotifier {
       _accounts.where((a) => a.type == type).toList()
         ..sort((a, b) => a.code.compareTo(b.code));
 
+  /// الحسابات النقدية (تقريبي: أصول بأسماء/أكواد نقدية)
+  List<Account> get cashAccounts {
+    return _accounts.where((a) {
+      if (a.type != AccountType.asset) return false;
+      final name = a.name;
+      final code = a.code;
+      return name.contains('نقد') ||
+          name.contains('صندوق') ||
+          name.contains('بنك') ||
+          name.contains('خزينة') ||
+          code.startsWith('111') ||
+          code.startsWith('112');
+    }).toList()
+      ..sort((a, b) => a.code.compareTo(b.code));
+  }
+
+  /// هل هذا الحساب نقدي؟
+  bool isCashAccount(String accountId) {
+    final acc = accountById(accountId);
+    if (acc == null) return false;
+    if (acc.type != AccountType.asset) return false;
+    final name = acc.name;
+    final code = acc.code;
+    return name.contains('نقد') ||
+        name.contains('صندوق') ||
+        name.contains('بنك') ||
+        name.contains('خزينة') ||
+        code.startsWith('111') ||
+        code.startsWith('112');
+  }
+
   // ── Journal Entries / Ledger ──────────────────────────────
 
   /// حركات حساب معيّن ضمن فترة
@@ -589,39 +620,6 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// الحسابات النقدية (أصول بأكواد تبدأ بـ 11 عادةً)
-/// نعتبرها: أي حساب أصل ورقي اسمه يحتوي على "نقد" أو "صندوق" أو "بنك"
-/// أو كوده يبدأ بـ 111 أو 112
-List<Account> get cashAccounts {
-  return _accounts.where((a) {
-    if (a.type != AccountType.asset) return false;
-    final name = a.name;
-    final code = a.code;
-    return name.contains('نقد') ||
-        name.contains('صندوق') ||
-        name.contains('بنك') ||
-        name.contains('خزينة') ||
-        code.startsWith('111') ||
-        code.startsWith('112');
-  }).toList()
-    ..sort((a, b) => a.code.compareTo(b.code));
-}
-
-/// هل هذا الحساب نقدي؟
-bool isCashAccount(String accountId) {
-  final acc = accountById(accountId);
-  if (acc == null) return false;
-  if (acc.type != AccountType.asset) return false;
-  final name = acc.name;
-  final code = acc.code;
-  return name.contains('نقد') ||
-      name.contains('صندوق') ||
-      name.contains('بنك') ||
-      name.contains('خزينة') ||
-      code.startsWith('111') ||
-      code.startsWith('112');
-}
-
   /// حذف حساب (إن لم يكن له حركات أو أبناء)
   Future<void> deleteAccount(String id) async {
     final hasMovements = _journalEntries.any(
@@ -636,6 +634,99 @@ bool isCashAccount(String accountId) {
     }
     _accounts = _accounts.where((a) => a.id != id).toList();
     // await _storage.saveAccounts(_accounts);
+    notifyListeners();
+  }
+
+  // ── Opening Balances (الأرصدة الافتتاحية) ─────────────────
+  static const String openingBalanceRefPrefix = 'OB-';
+
+  /// هل القيد هو قيد الأرصدة الافتتاحية؟
+  bool isOpeningBalanceEntry(JournalEntry e) =>
+      e.reference.startsWith(openingBalanceRefPrefix);
+
+  /// جلب قيد الأرصدة الافتتاحية (إن وجد)
+  JournalEntry? get openingBalanceEntry {
+    try {
+      return _journalEntries.firstWhere(
+        (e) => isOpeningBalanceEntry(e),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// استخراج الأرصدة الافتتاحية الحالية كـ map (accountId → signed balance)
+  /// الإشارة: موجب = في اتجاه طبيعة الحساب، سالب = عكسها
+  Map<String, double> get openingBalancesMap {
+    final entry = openingBalanceEntry;
+    if (entry == null) return {};
+    final result = <String, double>{};
+    for (final line in entry.lines) {
+      final acc = accountById(line.accountId);
+      if (acc == null) continue;
+      final isDebitNature = acc.type == AccountType.asset ||
+          acc.type == AccountType.expense;
+      result[line.accountId] =
+          isDebitNature ? (line.debit - line.credit) : (line.credit - line.debit);
+    }
+    return result;
+  }
+
+  /// حفظ الأرصدة الافتتاحية (يحذف القيد القديم ويُنشئ جديداً)
+  Future<void> saveOpeningBalances({
+    required DateTime date,
+    required Map<String, double> balances,
+  }) async {
+    // حذف القيد القديم
+    _journalEntries = _journalEntries
+        .where((e) => !isOpeningBalanceEntry(e))
+        .toList();
+
+    // بناء سطور القيد
+    final lines = <JournalLine>[];
+    for (final entry in balances.entries) {
+      if (entry.value.abs() < 0.01) continue;
+      final acc = accountById(entry.key);
+      if (acc == null) continue;
+      final isDebitNature = acc.type == AccountType.asset ||
+          acc.type == AccountType.expense;
+      final v = entry.value;
+      final debit = isDebitNature
+          ? (v > 0 ? v : 0)
+          : (v < 0 ? -v : 0);
+      final credit = isDebitNature
+          ? (v < 0 ? -v : 0)
+          : (v > 0 ? v : 0);
+      if (debit < 0.01 && credit < 0.01) continue;
+      lines.add(JournalLine(
+        accountId: entry.key,
+        debit: debit,
+        credit: credit,
+        description: 'رصيد افتتاحي',
+      ));
+    }
+
+    if (lines.isEmpty) return;
+
+    // التحقق من التوازن
+    final totalDebit = lines.fold<double>(0, (s, l) => s + l.debit);
+    final totalCredit = lines.fold<double>(0, (s, l) => s + l.credit);
+    if ((totalDebit - totalCredit).abs() > 0.01) {
+      throw ArgumentError(
+        'الأرصدة غير متوازنة: مدين=$totalDebit دائن=$totalCredit',
+      );
+    }
+
+    final entry = JournalEntry(
+      id: newJournalEntryId(),
+      reference: '$openingBalanceRefPrefix${date.year}',
+      date: date,
+      description: 'الأرصدة الافتتاحية للسنة ${date.year}',
+      lines: lines,
+    );
+
+    _journalEntries = [entry, ..._journalEntries];
+    // await _storage.saveJournalEntries(_journalEntries);
     notifyListeners();
   }
 }
