@@ -7,6 +7,9 @@ import '../models/insight.dart';
 import '../models/customer.dart';
 import '../models/sales_invoice.dart';
 import '../models/sales_document.dart';
+import '../models/supplier.dart';
+import '../models/purchase_invoice.dart';
+import '../models/purchase_document.dart';
 
 class StorageService {
   static const _resourcesKey = 'sm_resources';
@@ -18,6 +21,9 @@ class StorageService {
   static const _customersKey = 'sm_customers';
   static const _salesInvoicesKey = 'sm_sales_invoices';
   static const _salesDocumentsKey = 'sm_sales_documents';
+  static const _suppliersKey = 'sm_suppliers';
+  static const _purchaseInvoicesKey = 'sm_purchase_invoices';
+  static const _purchaseDocumentsKey = 'sm_purchase_documents';
 
   SharedPreferences? _prefs;
 
@@ -119,6 +125,45 @@ class StorageService {
 
   Future<void> saveSalesDocuments(List<SalesDocument> docs) async {
     await prefs.setString(_salesDocumentsKey, jsonEncode(docs.map((d) => d.toJson()).toList()));
+  }
+
+  // ─── Suppliers (الموردون) ─────────────────────────────────────────────────
+
+  Future<List<Supplier>> loadSuppliers() async {
+    final json = prefs.getString(_suppliersKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((e) => Supplier.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveSuppliers(List<Supplier> suppliers) async {
+    await prefs.setString(_suppliersKey, jsonEncode(suppliers.map((s) => s.toJson()).toList()));
+  }
+
+  // ─── Purchase Invoices (فواتير الشراء) ────────────────────────────────────
+
+  Future<List<PurchaseInvoice>> loadPurchaseInvoices() async {
+    final json = prefs.getString(_purchaseInvoicesKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((e) => PurchaseInvoice.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> savePurchaseInvoices(List<PurchaseInvoice> invoices) async {
+    await prefs.setString(_purchaseInvoicesKey, jsonEncode(invoices.map((i) => i.toJson()).toList()));
+  }
+
+  // ─── Purchase Documents (أوامر/مرتجعات شراء) ──────────────────────────────
+
+  Future<List<PurchaseDocument>> loadPurchaseDocuments() async {
+    final json = prefs.getString(_purchaseDocumentsKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((e) => PurchaseDocument.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> savePurchaseDocuments(List<PurchaseDocument> docs) async {
+    await prefs.setString(_purchaseDocumentsKey, jsonEncode(docs.map((d) => d.toJson()).toList()));
   }
 
   // ─── Settings ─────────────────────────────────────────────────────────────
