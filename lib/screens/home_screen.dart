@@ -21,6 +21,7 @@ import 'accounting/journal_entry_new_screen.dart';
 import 'accounting/journal_entries_list_screen.dart';
 import 'accounting/trial_balance_screen.dart';
 import 'accounting/profit_loss_screen.dart';
+import 'accounting/balance_sheet_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -239,7 +240,7 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.profitLoss:
         return const ProfitLossScreen();
       case AppScreen.balanceSheet:
-        return const _ComingSoon(title: 'الميزانية العمومية', icon: Icons.account_balance);
+        return const BalanceSheetScreen();
       case AppScreen.cashFlow:
         return const _ComingSoon(title: 'التدفقات النقدية', icon: Icons.swap_vert);
       case AppScreen.costCenters:
