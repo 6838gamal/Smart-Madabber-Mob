@@ -25,6 +25,7 @@ import 'accounting/balance_sheet_screen.dart';
 import 'accounting/cash_flow_screen.dart';
 import 'accounting/opening_balances_screen.dart';
 import 'accounting/cost_centers_screen.dart';
+import 'accounting/recurring_journal_form_screen.dart
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -235,7 +236,7 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.journalEntriesList:
         return const JournalEntriesListScreen();
       case AppScreen.recurringJournals:
-        return const _ComingSoon(title: 'القيود المتكررة', icon: Icons.repeat);
+        return const RecurringJournalFormScreen();
       case AppScreen.generalLedger:
         return const GeneralLedgerScreen();
       case AppScreen.trialBalance:
