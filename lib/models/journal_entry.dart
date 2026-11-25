@@ -3,21 +3,42 @@ class JournalLine {
   final double debit;   // مدين
   final double credit;  // دائن
   final String? description;
+  final String? costCenterId;  // مركز التكلفة (اختياري)
 
   const JournalLine({
     required this.accountId,
     this.debit = 0,
     this.credit = 0,
     this.description,
+    this.costCenterId,
   });
 
   double get net => debit - credit;
+
+  JournalLine copyWith({
+    String? accountId,
+    double? debit,
+    double? credit,
+    String? description,
+    String? costCenterId,
+    bool clearCostCenter = false,
+  }) {
+    return JournalLine(
+      accountId: accountId ?? this.accountId,
+      debit: debit ?? this.debit,
+      credit: credit ?? this.credit,
+      description: description ?? this.description,
+      costCenterId:
+          clearCostCenter ? null : (costCenterId ?? this.costCenterId),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'accountId': accountId,
         'debit': debit,
         'credit': credit,
         'description': description,
+        'costCenterId': costCenterId,
       };
 
   factory JournalLine.fromJson(Map<String, dynamic> j) => JournalLine(
@@ -25,6 +46,7 @@ class JournalLine {
         debit: (j['debit'] as num?)?.toDouble() ?? 0,
         credit: (j['credit'] as num?)?.toDouble() ?? 0,
         description: j['description'] as String?,
+        costCenterId: j['costCenterId'] as String?,
       );
 }
 
