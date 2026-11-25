@@ -29,6 +29,8 @@ import 'accounting/recurring_journal_form_screen.dart';
 import 'sales/customers_list_screen.dart';
 import 'sales/sales_invoice_new_screen.dart';
 import 'sales/sales_invoices_list_screen.dart';
+import 'sales/sales_documents_list_screen.dart';
+import '../models/sales_document.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -261,11 +263,11 @@ class HomeScreen extends StatelessWidget {
       case AppScreen.salesInvoicesList:
         return const SalesInvoicesListScreen();
       case AppScreen.salesReturns:
-        return const _ComingSoon(title: 'مرتجع المبيعات', icon: Icons.assignment_return_outlined);
+        return const SalesDocumentsListScreen(type: SalesDocType.salesReturn);
       case AppScreen.quotations:
-        return const _ComingSoon(title: 'عروض الأسعار', icon: Icons.request_quote_outlined);
+        return const SalesDocumentsListScreen(type: SalesDocType.quotation);
       case AppScreen.salesOrders:
-        return const _ComingSoon(title: 'أوامر البيع', icon: Icons.shopping_cart_outlined);
+        return const SalesDocumentsListScreen(type: SalesDocType.salesOrder);
       case AppScreen.customersList:
         return const CustomersListScreen();
       case AppScreen.discounts:
