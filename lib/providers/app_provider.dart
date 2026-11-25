@@ -6,6 +6,7 @@ import '../models/rule.dart';
 import '../models/insight.dart';
 import '../models/account.dart';
 import '../models/journal_entry.dart';
+import '../models/cost_center.dart';
 import '../services/storage_service.dart';
 import '../engine/rules_engine.dart';
 import '../engine/seed_data.dart';
@@ -86,6 +87,7 @@ class AppProvider extends ChangeNotifier {
   List<Insight> _insights = [];
   List<Account> _accounts = [];
   List<JournalEntry> _journalEntries = [];
+  List<CostCenter> _costCenters = [];
 
   // ── التنقل ─────────────────────────────────────────────────
   AppScreen _currentScreen = AppScreen.dashboard;
@@ -104,6 +106,7 @@ class AppProvider extends ChangeNotifier {
   List<Insight> get insights => List.unmodifiable(_insights);
   List<Account> get accounts => List.unmodifiable(_accounts);
   List<JournalEntry> get journalEntries => List.unmodifiable(_journalEntries);
+  List<CostCenter> get costCenters => List.unmodifiable(_costCenters);
 
   AppScreen get currentScreen => _currentScreen;
   Map<String, dynamic> get screenArgs => Map.unmodifiable(_screenArgs);
@@ -435,6 +438,7 @@ class AppProvider extends ChangeNotifier {
   String newResourceId() => _uuid.v4();
   String newTransactionId() => _uuid.v4();
   String newJournalEntryId() => _uuid.v4();
+  String newCostCenterId() => _uuid.v4();
 
   // ── Accounts ──────────────────────────────────────────────
   Account? accountById(String id) {
@@ -685,31 +689,31 @@ class AppProvider extends ChangeNotifier {
     // بناء سطور القيد
     final lines = <JournalLine>[];
     for (final entry in balances.entries) {
-  if (entry.value.abs() < 0.01) continue;
-  final acc = accountById(entry.key);
-  if (acc == null) continue;
-  final isDebitNature = acc.type == AccountType.asset ||
-      acc.type == AccountType.expense;
-  final v = entry.value;
+      if (entry.value.abs() < 0.01) continue;
+      final acc = accountById(entry.key);
+      if (acc == null) continue;
+      final isDebitNature = acc.type == AccountType.asset ||
+          acc.type == AccountType.expense;
+      final v = entry.value;
 
-  final double debit;
-  final double credit;
-  if (isDebitNature) {
-    debit = v > 0 ? v : 0.0;
-    credit = v < 0 ? -v : 0.0;
-  } else {
-    debit = v < 0 ? -v : 0.0;
-    credit = v > 0 ? v : 0.0;
-  }
+      final double debit;
+      final double credit;
+      if (isDebitNature) {
+        debit = v > 0 ? v : 0.0;
+        credit = v < 0 ? -v : 0.0;
+      } else {
+        debit = v < 0 ? -v : 0.0;
+        credit = v > 0 ? v : 0.0;
+      }
 
-  if (debit < 0.01 && credit < 0.01) continue;
+      if (debit < 0.01 && credit < 0.01) continue;
 
-  lines.add(JournalLine(
-    accountId: entry.key,
-    debit: debit,
-    credit: credit,
-    description: 'رصيد افتتاحي',
-  ));
+      lines.add(JournalLine(
+        accountId: entry.key,
+        debit: debit,
+        credit: credit,
+        description: 'رصيد افتتاحي',
+      ));
     }
 
     if (lines.isEmpty) return;
@@ -734,6 +738,84 @@ class AppProvider extends ChangeNotifier {
     _journalEntries = [entry, ..._journalEntries];
     // await _storage.saveJournalEntries(_journalEntries);
     notifyListeners();
+  }
+
+  // ── Cost Centers (مراكز التكلفة) ──────────────────────────
+  CostCenter? costCenterById(String id) {
+    try {
+      return _costCenters.firstWhere((c) => c.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<CostCenter> get sortedCostCenters =>
+      List<CostCenter>.from(_costCenters)
+        ..sort((a, b) => a.code.compareTo(b.code));
+
+  /// المراكز الورقية (ليس لها أبناء) — القابلة للاستخدام في القيود
+  List<CostCenter> get leafCostCenters {
+    final parentIds = _costCenters
+        .where((c) => c.parentId != null)
+        .map((c) => c.parentId!)
+        .toSet();
+    return _costCenters
+        .where((c) => !parentIds.contains(c.id))
+        .toList()
+      ..sort((a, b) => a.code.compareTo(b.code));
+  }
+
+  Future<void> addCostCenter(CostCenter center) async {
+    _costCenters = [..._costCenters, center];
+    // await _storage.saveCostCenters(_costCenters);
+    notifyListeners();
+  }
+
+  Future<void> updateCostCenter(CostCenter center) async {
+    _costCenters =
+        _costCenters.map((c) => c.id == center.id ? center : c).toList();
+    // await _storage.saveCostCenters(_costCenters);
+    notifyListeners();
+  }
+
+  Future<void> deleteCostCenter(String id) async {
+    final hasMovements = _journalEntries.any(
+      (e) => e.lines.any((l) => l.costCenterId == id),
+    );
+    if (hasMovements) {
+      throw ArgumentError('لا يمكن حذف مركز له حركات مرتبطة');
+    }
+    final hasChildren = _costCenters.any((c) => c.parentId == id);
+    if (hasChildren) {
+      throw ArgumentError('لا يمكن حذف مركز له مراكز فرعية');
+    }
+    _costCenters = _costCenters.where((c) => c.id != id).toList();
+    // await _storage.saveCostCenters(_costCenters);
+    notifyListeners();
+  }
+
+  /// إجمالي مدين/دائن لكل مركز تكلفة ضمن فترة
+  Map<String, ({double debit, double credit})> totalsByCostCenter({
+    DateTime? from,
+    DateTime? to,
+  }) {
+    final result = <String, ({double debit, double credit})>{};
+    for (final entry in _journalEntries) {
+      if (from != null && entry.date.isBefore(from)) continue;
+      if (to != null && entry.date.isAfter(to.add(const Duration(days: 1)))) {
+        continue;
+      }
+      for (final line in entry.lines) {
+        final ccId = line.costCenterId;
+        if (ccId == null || ccId.isEmpty) continue;
+        final cur = result[ccId] ?? (debit: 0.0, credit: 0.0);
+        result[ccId] = (
+          debit: cur.debit + line.debit,
+          credit: cur.credit + line.credit,
+        );
+      }
+    }
+    return result;
   }
 }
 
